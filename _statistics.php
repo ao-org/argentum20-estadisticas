@@ -33,6 +33,86 @@ function executeGetMultipleRowsQuery($query) {
     return $result;
 }
 
+function getRaza($raceId) {
+    $raceId = intval($raceId);
+    $raza = '';
+
+    switch($raceId) {
+        case 1:
+            $raza = 'Humano';
+            break;
+        case 2:
+            $raza = 'Elfo';
+            break;
+        case 3:
+            $raza = 'Elfo Oscuro';
+            break;
+        case 4:
+            $raza = 'Gnomo';
+            break;
+        case 5:
+            $raza = 'Enano';
+            break;
+        case 6:
+            $raza = 'Orco';
+            break;
+        default:
+            $raza = 'Otra';
+            break;
+    }
+
+    return $raza;
+}
+
+function getClase($classId) {
+    $classId = intval($classId);
+    $clase = '';
+
+    switch($classId) {
+        case 1:
+            $clase = 'Mago';
+            break;
+        case 2:
+            $clase = 'Clérigo';
+            break;
+        case 3:
+            $clase = 'Guerrero';
+            break;
+        case 4:
+            $clase = 'Asesino';
+            break;
+        case 5:
+            $clase = 'Ladrón';
+            break;
+        case 6:
+            $clase = 'Bardo';
+            break;
+        case 7:
+            $clase = 'Druida';
+            break;
+        case 8:
+            $clase = 'Bandido';
+            break;
+        case 9:
+            $clase = 'Paladín';
+            break;
+        case 10:
+            $clase = 'Cazador';
+            break;
+        case 11:
+            $clase = 'Trabajador';
+            break;
+        case 12:
+            $clase = 'Pirata';
+            break;
+        default:
+            $clase = 'Otra';
+            break;
+    }
+
+    return $clase;
+}
+
 function getGeneralStats()
 {
     $query = <<<SQL
@@ -186,7 +266,7 @@ function getUsuariosOnlinePorHora()
 {
     $query = <<<SQL
         SELECT HOUR(date) as hora, AVG(number) as users
-        FROM users_online
+        FROM statistics_users_online
         GROUP BY HOUR(date);
 SQL;
 
@@ -201,6 +281,6 @@ SQL;
     foreach ($usuariosPorHora as $entry) {
         $result[$entry['hora']] = floatval($entry['users']);
     }
-
+    
     return $result;
 }
