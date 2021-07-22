@@ -1,9 +1,9 @@
 <?php
 
-$databaseHost = '';
-$databaseUserRead = '';
-$databasePasswordRead = '';
-$databaseName = '';
+$databaseHost = 'ao20-testeo-tercero.duckdns.org';
+$databaseUserRead = 'reyarb';
+$databasePasswordRead = 'EMLgHSZHyitwWh7I';
+$databaseName = 'ao_server_test';
 
 function executeGetQuery($query) {
     global $databaseHost, $databaseUserRead, $databasePasswordRead, $databaseName;
