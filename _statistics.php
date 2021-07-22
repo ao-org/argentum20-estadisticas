@@ -1,9 +1,5 @@
 <?php
-
-$databaseHost = 'ao20-testeo-tercero.duckdns.org';
-$databaseUserRead = 'reyarb';
-$databasePasswordRead = 'EMLgHSZHyitwWh7I';
-$databaseName = 'ao_server_test';
+include('environment.php');
 
 function executeGetQuery($query) {
     global $databaseHost, $databaseUserRead, $databasePasswordRead, $databaseName;
@@ -281,6 +277,6 @@ SQL;
     foreach ($usuariosPorHora as $entry) {
         $result[$entry['hora']] = floatval($entry['users']);
     }
-    
+
     return $result;
 }
