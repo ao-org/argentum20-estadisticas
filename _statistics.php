@@ -83,7 +83,8 @@ SQL;
 
     foreach ($usuariosPorClase as $entry) {
         $result[] = array(
-            'name' => getClase($entry['class_id']),
+            // 'name' => getClase($entry['class_id']),
+            'name' => 'test',
             'y' => intval($entry['count'])
         );
     }
@@ -111,7 +112,8 @@ SQL;
     for ($i = 1; $i < 7 ; $i++) {
         $arrayClases = array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         $result[$i] = array(
-            'name' => getRaza($i),
+            // 'name' => getRaza($i),
+            'name' => 'test raza',
             'data' => $arrayClases
         );
     }
@@ -171,7 +173,8 @@ SQL;
 
     foreach ($killsPorClase as $entry) {
         $result[] = array(
-            'name' => getClase($entry['class_id']),
+            // 'name' => getClase($entry['class_id']),
+            'name' => 'test',
             'y' => intval($entry['promedio_matados'])
         );
     }
