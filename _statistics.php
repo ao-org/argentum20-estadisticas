@@ -2,8 +2,8 @@
 include('environment.php');
 
 function executeGetQuery($query) {
-    global $databaseHost, $databaseUserRead, $databasePasswordRead, $databaseName;
-    $conn = mysqli_connect($databaseHost, $databaseUserRead, $databasePasswordRead, $databaseName);
+    global $databaseHost, $databaseUserRead, $databasePasswordRead, $databaseName, $databasePort;
+    $conn = mysqli_connect($databaseHost, $databaseUserRead, $databasePasswordRead, $databaseName, $databasePort);
     
     mysqli_set_charset($conn, 'utf8');
 
@@ -18,8 +18,8 @@ function executeGetQuery($query) {
 
 
 function executeGetMultipleRowsQuery($query) {
-    global $databaseHost, $databaseUserRead, $databasePasswordRead, $databaseName;
-    $conn =  mysqli_connect($databaseHost, $databaseUserRead, $databasePasswordRead, $databaseName);
+    global $databaseHost, $databaseUserRead, $databasePasswordRead, $databaseName, $databasePort;
+    $conn =  mysqli_connect($databaseHost, $databaseUserRead, $databasePasswordRead, $databaseName, $databasePort);
     mysqli_set_charset($conn, 'utf8');
 
     $result = mysqli_query($conn, $query);
