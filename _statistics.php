@@ -78,28 +78,28 @@ function getClase($classId) {
             $clase = 'Asesino';
             break;
         case 5:
-            $clase = 'Ladrón';
-            break;
-        case 6:
             $clase = 'Bardo';
             break;
-        case 7:
+        case 6:
             $clase = 'Druida';
             break;
+        case 7:
+            $clase = 'Paladin';
+            break;
         case 8:
-            $clase = 'Bandido';
-            break;
-        case 9:
-            $clase = 'Paladín';
-            break;
-        case 10:
             $clase = 'Cazador';
             break;
-        case 11:
+        case 9:
             $clase = 'Trabajador';
             break;
-        case 12:
+        case 10:
             $clase = 'Pirata';
+            break;
+        case 11:
+            $clase = 'Ladron';
+            break;
+        case 12:
+            $clase = 'Bandido';
             break;
         default:
             $clase = 'Otra';
