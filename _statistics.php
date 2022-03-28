@@ -145,8 +145,7 @@ function getUsuariosPorClase()
     $query = <<<SQL
         SELECT class_id, COUNT(id) as count
         FROM user
-        WHERE class_id <> 11
-            AND level > 25
+        WHERE level > 25
             AND deleted = false
             AND guild_index <> 1
         GROUP BY class_id
@@ -172,8 +171,7 @@ function getClasesPorRaza()
     $query = <<<SQL
         SELECT race_id, class_id, COUNT(id) as count
         FROM user
-        WHERE class_id <> 11
-            AND level > 25
+        WHERE level > 25
             AND deleted = false
             AND guild_index <> 1
         GROUP BY race_id, class_id
