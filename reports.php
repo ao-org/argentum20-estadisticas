@@ -8,6 +8,6 @@
   }
   
   foreach (listFolderFiles($directory) as $file) {
-    echo '<a href="' . $directory . $file .'">'. $file .'</a><br>';
+    echo '<a href="' . $file .'">'. $file .'</a><br>';
   }
 ?>
