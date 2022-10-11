@@ -12,8 +12,27 @@ function listFolderFiles($dir){
     }
 }
 
+function scanDirOrderByModifiedDate($dir) {
+    $ignored = array('.', '..', '.svn', '.htaccess', ".html");
+
+    $files = array();    
+    foreach (scandir($dir) as $file) {
+        if (in_array($file, $ignored)) continue;
+        $files[$file] = filemtime($dir . '/' . $file);
+    }
+
+    arsort($files);
+    $files = array_keys($files);
+
+    return ($files) ? $files : false;
+}
+
 function getLastReport($dir){
-    $files = scandir($dir, SCANDIR_SORT_DESCENDING);
+    $files = scanDirOrderByModifiedDate($dir);
+    if (!$files) {
+        die("No hay archivos de reporte");
+    }
+
     $filePath = $dir . "/" . $files[0];
     $f = fopen($filePath, 'r');
     
