@@ -11,3 +11,18 @@ function listFolderFiles($dir){
             yield "${dir}/${file}";
     }
 }
+
+function getLastReport($dir){
+    $files = scandir($dir, SCANDIR_SORT_DESCENDING);
+    $filePath = $dir . "/" . $files[0];
+    $f = fopen($filePath, 'r');
+    
+    if ($f) {
+        $contents = fread($f, filesize($filePath));
+        fclose($f);
+
+        header("Content-Type: application/json");
+        echo json_encode($contents);
+        exit();
+    }
+}
