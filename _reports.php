@@ -22,7 +22,9 @@ function getLastReport($dir){
         fclose($f);
 
         header("Content-Type: application/json");
-        echo json_encode($contents);
+
+        $json = preg_replace("!\r?\n!", "", $contents);
+        echo json_encode($json);
         exit();
     }
 }
