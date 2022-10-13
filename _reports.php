@@ -39,11 +39,8 @@ function getLastReport($dir){
     if ($f) {
         $contents = fread($f, filesize($filePath));
         fclose($f);
-
         header("Content-Type: application/json");
-
-        $json = preg_replace("!\r?\n!", "", $contents);
-        echo json_encode($json);
+        echo $contents;
         exit();
     }
 }
