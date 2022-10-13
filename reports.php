@@ -1,12 +1,13 @@
 <?php
   include('_reports.php');
-  
-  if ($_GET['last'] == 'true') {
-    echo getLastReport('../reports');
+  $directory = '../' . $_GET['dir'];
+
+  if (isset($_GET['last']) && $_GET['last'] == 'true') {
+    echo getLastReport($directory);
     die();
   }
   
-  foreach (listFolderFiles('../reports') as $file) {
-    echo '<a href="../reports/'. $file .'">'. $file .'</a><br>';
+  foreach (listFolderFiles($directory) as $file) {
+    echo '<a href="' . $file .'">'. $file .'</a><br>';
   }
 ?>
