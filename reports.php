@@ -1,6 +1,17 @@
 <?php
   include('_reports.php');
-  $directory = '../' . $_GET['dir'];
+  $dir = "";
+
+  switch ($_GET['dir']) {
+    case "reports":
+      $dir = "reports"
+      break;
+      
+    default:
+      $dir = "reports"
+  }
+
+  $directory = '../' . $dir;
 
   if (isset($_GET['last']) && $_GET['last'] == 'true') {
     echo getLastReport($directory);
