@@ -4,11 +4,11 @@
 
   switch ($_GET['dir']) {
     case "reports":
-      $dir = "reports"
+      $dir = "reports";
       break;
       
     default:
-      $dir = "reports"
+      $dir = "reports";
   }
 
   $directory = '../' . $dir;
