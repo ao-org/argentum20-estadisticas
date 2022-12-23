@@ -28,8 +28,8 @@
         <div class="collapse navbar-collapse" id="navbarResponsive">
           <ul class="navbar-nav ml-auto">
             <li class="nav-item">
-              <a class="nav-link" href="https://ao20.com.ar">Web</a>
-              <a class="nav-link" href="https://test.ao20.com.ar">Web Test</a>
+              <a class="nav-link" href="https://ao20.com.ar">Web Produccion</a>
+              <a class="nav-link" href="https://staging.ao20.com.ar">Web Staging</a>
             </li>
           </ul>
         </div>
