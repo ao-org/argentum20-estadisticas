@@ -7,8 +7,8 @@ function executeGetQuery($query) {
     
     mysqli_set_charset($conn, 'utf8');
 
-    $result = mysqli_query($conn, $query);
     // die(print_r($query));
+    $result = mysqli_query($conn, $query);
     $result = mysqli_fetch_assoc($result);
 
     mysqli_close($conn);

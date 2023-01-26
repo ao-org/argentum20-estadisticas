@@ -21,7 +21,8 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
       <div class="container">
-        <a class="navbar-brand" href="index.php"><img src="img/logo.png" /></a>
+        <img src="img/logo.png" />
+        <h1>Estadisticas AO20</h1>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -108,6 +109,16 @@
             </div>
           </div>
 
+          <div class="card mb-3">
+            <div class="card-header">Inflacion de Oro</div>
+            <div class="card-body">
+            <figure class="highcharts-figure">
+              <div id="goldInflation"></div>
+            </figure>
+            </div>
+          </div>
+
+
         </div>
 
       </div>
@@ -124,6 +135,41 @@
     <script src="./vendor/Highcharts-8.0.4/code/themes/dark-unica.js"></script>
 
     <script type="text/javascript">
+        //Retrieve the data from the MySQL table using an AJAX call or a Node.js server
+        $.ajax({
+            url: "https://api.ao20.com.ar:11811/statistics/getGoldStatistics",
+            success: function(data) {
+                var datetime = data.map(a => a.datetime);
+                var gold_total = data.map(a => a.gold_total);
+                var gold_inventory = data.map(a => a.gold_inventory);
+                var gold_bank = data.map(a => a.gold_bank);
+
+                var chart = Highcharts.chart('goldInflation', {
+                    title: {
+                        text: 'Inflacion de Oro'
+                    },
+                    xAxis: {
+                        categories: datetime
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Oro'
+                        }
+                    },
+                    series: [{
+                        name: 'Oro Total',
+                        data: gold_total
+                    }, {
+                        name: 'Oro Inventario',
+                        data: gold_inventory
+                    }, {
+                        name: 'Oro en Banco',
+                        data: gold_bank
+                    }]
+                });
+            }
+        });
+
        window.onload = () => {
         Highcharts.chart('chartUsuariosPorClase', {
           chart: {
