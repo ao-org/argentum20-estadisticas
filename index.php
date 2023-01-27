@@ -148,7 +148,11 @@ $stats = getGeneralStats();
     $.ajax({
       url: "https://api.ao20.com.ar:11811/statistics/getGoldStatistics",
       success: function(data) {
-        var datetime = data.map(a => a.datetime);
+        var datetime = data.map(a => {
+          var date = new Date(a.datetime);
+          return (date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getFullYear() + ' ' + date.getHours() + ':' + date.getMinutes();
+        });
+
         var gold_total = data.map(a => a.gold_total);
         var gold_inventory = data.map(a => a.gold_inventory);
         var gold_bank = data.map(a => a.gold_bank);
@@ -188,10 +192,8 @@ $stats = getGeneralStats();
     });
 
     $.ajax({
-      // url: "https://api.ao20.com.ar:11811/statistics/getItemsStatistics",
-      url: "http://localhost:8080/statistics/getItemsStatistics",
+      url: "https://api.ao20.com.ar:11811/statistics/getItemsStatistics",
       success: function(data) {
-        var datetime = data.map(a => a.datetime);
         let chartData = {};
 
         data.forEach((item) => {
@@ -200,7 +202,7 @@ $stats = getGeneralStats();
           }
 
           chartData[item.NAME].push({
-            x: new Date(item.datetime),
+            x: new Date(item.datetime).getTime(),
             y: item.total_quantity
           });
         });
@@ -219,7 +221,11 @@ $stats = getGeneralStats();
             text: 'Cantidad de items'
           },
           xAxis: {
-            categories: datetime
+            type: 'datetime',
+            labels: {
+              format: '{value:%Y-%m-%d %H:%M}',
+              rotation: -45
+            }
           },
           yAxis: {
             title: {
