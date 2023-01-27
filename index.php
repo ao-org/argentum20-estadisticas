@@ -156,8 +156,8 @@ $stats = getGeneralStats();
         var gold_total = data.map(a => a.gold_total);
         var gold_inventory = data.map(a => a.gold_inventory);
         var gold_bank = data.map(a => a.gold_bank);
-        // var gold_inventory_as_item = data.map(a => a.gold_inventory_as_item);
-        // var gold_bank_as_item = data.map(a => a.gold_bank_as_item);
+        var gold_inventory_as_item = data.map(a => a.gold_inventory_as_item);
+        var gold_bank_as_item = data.map(a => a.gold_bank_as_item);
 
         var chart = Highcharts.chart('goldInflation', {
           title: {
@@ -180,13 +180,13 @@ $stats = getGeneralStats();
           }, {
             name: 'Oro en Banco',
             data: gold_bank
+          }, {
+            name: 'Oro en Inventario como Item',
+            data: gold_inventory_as_item
+          }, {
+            name: 'Oro en Banco como Item',
+            data: gold_bank_as_item
           }]
-          //   name: 'Oro en Inventario como Item',
-          //   data: gold_inventory_as_item
-          // }, {
-          //   name: 'Oro en Banco como Item',
-          //   data: gold_bank_as_item
-          // }]
         });
       }
     });
