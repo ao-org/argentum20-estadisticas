@@ -180,13 +180,13 @@ $stats = getGeneralStats();
           }, {
             name: 'Oro en Banco',
             data: gold_bank
-          }, {
-            name: 'Oro en Inventario como Item',
-            data: gold_inventory_as_item
-          }, {
-            name: 'Oro en Banco como Item',
-            data: gold_bank_as_item
           }]
+          //   name: 'Oro en Inventario como Item',
+          //   data: gold_inventory_as_item
+          // }, {
+          //   name: 'Oro en Banco como Item',
+          //   data: gold_bank_as_item
+          // }]
         });
       }
     });
