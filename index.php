@@ -118,6 +118,15 @@
             </div>
           </div>
 
+          <div class="card mb-3">
+            <div class="card-header">Inflacion de items</div>
+            <div class="card-body">
+            <figure class="highcharts-figure">
+              <div id="itemsInflation"></div>
+            </figure>
+            </div>
+          </div>
+
 
         </div>
 
@@ -169,6 +178,47 @@
                 });
             }
         });
+
+
+
+      $.ajax({
+          url: "http://localhost:8080/statistics/getItemsStatistics",
+          // url: "https://api.ao20.com.ar:11811/statistics/getItemsStatistics",
+          
+          success: function(data) {
+              // Prepare the data for the chart
+              var chartData = data.map(function(d) {
+                return {
+                  x: new Date(d.datetime),
+                  y: d.total_quantity,
+                  name: d.item_id
+                };
+              });
+
+              // Create the chart
+              var chart = new Highcharts.Chart('itemsInflation',{
+                chart: {
+                  renderTo: 'container',
+                  type: 'line'
+                },
+                title: {
+                  text: 'Cantidad de items en el mundo'
+                },
+                xAxis: {
+                  type: 'dias'
+                },
+                yAxis: {
+                  title: {
+                    text: 'Cantidad Total'
+                  }
+                },
+                series: [{
+                  name: 'Items',
+                  data: chartData
+                }]
+              });
+          }
+      });
 
        window.onload = () => {
         Highcharts.chart('chartUsuariosPorClase', {
