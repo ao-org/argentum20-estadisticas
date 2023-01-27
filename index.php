@@ -223,7 +223,7 @@ $stats = getGeneralStats();
           },
           yAxis: {
             title: {
-              text: 'Oro'
+              text: 'Cantidad'
             }
           },
           series: series
