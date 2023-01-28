@@ -8,6 +8,11 @@ body {
     padding-top: 100px;
 }
 
+.highcharts-figure {
+	height: 500px;
+	width: 100%;
+}
+
 .mb10 {
 	margin-bottom: 10px !important;
 }

@@ -39,69 +39,71 @@ $stats = getGeneralStats();
   </nav>
 
   <!-- Page Content -->
-  <div class="container">
 
-    <div class="row">
+  <!-- Blog Entries Column -->
+  <h1 class="my-4">Estadisticas del servidor</h1>
 
-      <!-- Blog Entries Column -->
-      <div class="col-md-8">
-        <h1 class="my-4">Estadisticas del servidor</h1>
+  <div class="card mb-3">
+    <div class="card-header">Estadisticas generales</div>
+    <div class="card-body">
+      <table class="table table-personaje">
+        <tbody>
+          <tr>
+            <td>Cuentas creadas</td>
+            <td><?php echo $stats['accounts']; ?></td>
+          </tr>
+          <tr>
+            <td>Personajes creados</td>
+            <td><?php echo $stats['users']; ?></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-        <div class="card mb-3">
-          <div class="card-header">Estadisticas generales</div>
-          <div class="card-body">
-            <table class="table table-personaje">
-              <tbody>
-                <tr>
-                  <td>Cuentas creadas</td>
-                  <td><?php echo $stats['accounts']; ?></td>
-                </tr>
-                <tr>
-                  <td>Personajes creados</td>
-                  <td><?php echo $stats['users']; ?></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+  <div class="card mb-3">
+    <div class="card-header">Usuarios por clase</div>
+    <div class="card-body">
+      <figure class="highcharts-figure">
+        <div id="chartUsuariosPorClase"></div>
+      </figure>
+    </div>
+  </div>
 
-        <div class="card mb-3">
-          <div class="card-header">Usuarios por clase</div>
-          <div class="card-body">
-            <figure class="highcharts-figure">
-              <div id="chartUsuariosPorClase"></div>
-            </figure>
-          </div>
-        </div>
 
-        <div class="card mb-3">
-          <div class="card-header">Clases por raza</div>
-          <div class="card-body">
-            <figure class="highcharts-figure">
-              <div id="chartClasesPorRaza"></div>
-            </figure>
-          </div>
-        </div>
+  <div class="card bg-primary text-white">
+    <div class="card-body">Primary card</div>
+  </div>
 
-        <div class="card mb-3">
-          <div class="card-header">Usuarios matados por clase</div>
-          <div class="card-body">
-            <figure class="highcharts-figure">
-              <div id="chartUsuariosMatadosPorClase"></div>
-            </figure>
-          </div>
-        </div>
 
-        <div class="card mb-3">
-          <div class="card-header">Usuarios por nivel</div>
-          <div class="card-body">
-            <figure class="highcharts-figure">
-              <div id="chartUsuariosPorLevel"></div>
-            </figure>
-          </div>
-        </div>
+  <div class="card mb-3">
+    <div class="card-header">Clases por raza</div>
+    <div class="card-body">
+      <figure class="highcharts-figure">
+        <div id="chartClasesPorRaza"></div>
+      </figure>
+    </div>
+  </div>
 
-        <!-- <div class="card mb-3">
+  <div class="card mb-3">
+    <div class="card-header">Usuarios matados por clase</div>
+    <div class="card-body">
+      <figure class="highcharts-figure">
+        <div id="chartUsuariosMatadosPorClase"></div>
+      </figure>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">Usuarios por nivel</div>
+    <div class="card-body">
+      <figure class="highcharts-figure">
+        <div id="chartUsuariosPorLevel"></div>
+      </figure>
+    </div>
+  </div>
+
+  <!-- <div class="card mb-3">
             <div class="card-header">Usuarios online por hora</div>
             <div class="card-body">
             <figure class="highcharts-figure">
@@ -110,32 +112,25 @@ $stats = getGeneralStats();
             </div>
           </div> -->
 
-        <div class="card mb-3">
-          <div class="card-header">Inflacion de Oro</div>
-          <div class="card-body">
-            <figure class="highcharts-figure">
-              <div id="goldInflation"></div>
-            </figure>
-          </div>
-        </div>
-
-        <div class="card mb-3">
-          <div class="card-header">Cantidad de items</div>
-          <div class="card-body">
-            <figure class="highcharts-figure">
-              <div id="itemsQuantity"></div>
-            </figure>
-          </div>
-        </div>
-
-
-      </div>
-
+  <div class="card mb-3">
+    <div class="card-header">Inflacion de Oro</div>
+    <div class="card-body">
+      <figure class="highcharts-figure">
+        <div id="goldInflation"></div>
+      </figure>
     </div>
-    <!-- /.row -->
-    <iframe src="https://steamdb.info/embed/?appid=1956740" height="389" style="border:0;overflow:hidden;width:100%" loading="lazy"></iframe>
   </div>
-  <!-- /.container -->
+
+  <div class="card mb-3">
+    <div class="card-header">Cantidad de items</div>
+    <div class="card-body">
+      <figure class="highcharts-figure">
+        <div id="itemsQuantity"></div>
+      </figure>
+    </div>
+  </div>
+
+  <iframe src="https://steamdb.info/embed/?appid=1956740" height="389" style="border:0;overflow:hidden;width:100%" loading="lazy"></iframe>
 
   <!-- Bootstrap core JavaScript -->
   <script src="./vendor/jquery/jquery.min.js"></script>
