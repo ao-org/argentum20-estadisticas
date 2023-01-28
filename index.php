@@ -24,17 +24,6 @@ $stats = getGeneralStats();
     <div class="container">
       <img src="img/logo.png" />
       <h1>Estadisticas AO20</h1>
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarResponsive">
-        <ul class="navbar-nav ml-auto">
-          <li class="nav-item">
-            <a class="nav-link" href="https://ao20.com.ar">Web Produccion</a>
-            <a class="nav-link" href="https://staging.ao20.com.ar">Web Staging</a>
-          </li>
-        </ul>
-      </div>
     </div>
   </nav>
 
