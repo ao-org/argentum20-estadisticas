@@ -130,7 +130,7 @@ $stats = getGeneralStats();
 
   <script type="text/javascript">
     $.ajax({
-      url: "https://api.ao20.com.ar:11811/statistics/getGoldStatistics",
+      url: "https://api.ao20.com.ar:4004/statistics/getGoldStatistics",
       success: function(data) {
         var datetime = data.map(a => {
           var date = new Date(a.datetime);
@@ -176,7 +176,7 @@ $stats = getGeneralStats();
     });
 
     $.ajax({
-      url: "https://api.ao20.com.ar:11811/statistics/getItemsStatistics",
+      url: "https://api.ao20.com.ar:4004/statistics/getItemsStatistics",
       success: function(data) {
         let chartData = {};
 
