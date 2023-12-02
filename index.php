@@ -59,12 +59,6 @@ $stats = getGeneralStats();
     </div>
   </div>
 
-
-  <div class="card bg-primary text-white">
-    <div class="card-body">Primary card</div>
-  </div>
-
-
   <div class="card mb-3">
     <div class="card-header">Clases por raza</div>
     <div class="card-body">
