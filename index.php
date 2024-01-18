@@ -23,7 +23,7 @@ $stats = getGeneralStats();
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
     <div class="container">
       <img src="img/logo.png" />
-      <h1>Estadisticas AO20</h1>
+      <h1>Estadisticas AO</h1>
     </div>
   </nav>
 
