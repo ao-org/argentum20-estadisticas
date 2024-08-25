@@ -1,0 +1,9 @@
+name: Aider on Issue Labeled
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  aider:
+    uses: ao-org/.github/.github/workflows/aider-on-issue-labeled.yml@master
