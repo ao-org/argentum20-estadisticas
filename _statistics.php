@@ -145,8 +145,7 @@ function getUsuariosPorClase()
     $query = <<<SQL
         SELECT class_id, COUNT(id) as count
         FROM user
-        WHERE level > 25
-            AND deleted = false
+        WHERE deleted = false
             AND guild_index <> 1
         GROUP BY class_id
         ORDER BY class_id;
@@ -171,8 +170,7 @@ function getClasesPorRaza()
     $query = <<<SQL
         SELECT race_id, class_id, COUNT(id) as count
         FROM user
-        WHERE level > 25
-            AND deleted = false
+        WHERE deleted = false
             AND guild_index <> 1
         GROUP BY race_id, class_id
         ORDER BY race_id, class_id;
@@ -204,8 +202,7 @@ function getUsuariosPorLevel()
     $query = <<<SQL
         SELECT level, COUNT(id) as count
         FROM user
-        WHERE level > 13
-            AND deleted = false
+        WHERE deleted = false
             AND guild_index <> 1
         GROUP BY level
         ORDER BY level ASC;
@@ -231,8 +228,7 @@ function getKillsPorClase()
     $query = <<<SQL
         SELECT class_id, AVG(ciudadanos_matados + criminales_matados) as promedio_matados
         FROM user
-        WHERE level >= 25
-            AND deleted = FALSE
+        WHERE deleted = FALSE
             AND guild_index <> 1
         GROUP BY class_id
         HAVING promedio_matados >= 1

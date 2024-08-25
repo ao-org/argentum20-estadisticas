@@ -1,7 +1,5 @@
 <?php
-// include('functions.php');
 include('_statistics.php');
-// $pageData = getIndexPageData();
 $stats = getGeneralStats();
 ?>
 
@@ -85,15 +83,6 @@ $stats = getGeneralStats();
       </figure>
     </div>
   </div>
-
-  <!-- <div class="card mb-3">
-            <div class="card-header">Usuarios online por hora</div>
-            <div class="card-body">
-            <figure class="highcharts-figure">
-              <div id="chartUsuariosPorHora"></div>
-            </figure>
-            </div>
-          </div> -->
 
   <div class="card mb-3">
     <div class="card-header">Inflacion de Oro</div>
@@ -227,7 +216,7 @@ $stats = getGeneralStats();
           text: 'Usuarios por clase'
         },
         subtitle: {
-          text: 'solo contando mayores a nivel 25'
+          text: 'todos los personajes del servidor'
         },
         tooltip: {
           pointFormat: '{series.name}: <b>{point.y}</b>'
@@ -262,7 +251,7 @@ $stats = getGeneralStats();
           text: 'Clases por Raza'
         },
         subtitle: {
-          text: 'solo contando mayores a nivel 25'
+          text: 'todos los personajes del servidor'
         },
         xAxis: {
           categories: [
@@ -273,11 +262,11 @@ $stats = getGeneralStats();
             'Ladrón',
             'Bardo',
             'Druida',
-            'Bandido',
             'Paladin',
             'Cazador',
             'Trabajador',
-            'Pirata'
+            'Pirata',
+            'Bandido'
           ],
           crosshair: true
         },
@@ -303,73 +292,6 @@ $stats = getGeneralStats();
         },
         series: <?php echo json_encode(getClasesPorRaza()); ?>
       });
-
-      // Highcharts.chart('chartUsuariosPorHora', {
-      //   title: {
-      //     text: 'Usuarios online'
-      //   },
-      //   subtitle: {
-      //     text: 'promedio por hora'
-      //   },
-      //   yAxis: {
-      //     title: {
-      //       text: 'Cantidad de usuarios'
-      //     },
-      //     labels: {
-      //         format: '{value.2f}'    
-      //     }
-      //   },
-      //   xAxis: {
-      //     title: {
-      //       text: 'Hora'
-      //     },
-      //     categories: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
-      //     step: 1,
-      //     minRange: 1,
-      //     labels: {
-      //         format: '{value}hs'    
-      //     }
-      //   },
-      //   tooltip: {
-      //       headerFormat: '<b>{point.key}hs</b><br/>'
-      //   },
-      //   legend: {
-      //       layout: 'horizontal',
-      //       align: 'center',
-      //       verticalAlign: 'bottom'
-      //   },
-
-      //   plotOptions: {
-      //       series: {
-      //           label: {
-      //               connectorAllowed: false
-      //           },
-      //           pointStart: 0
-      //       }
-      //   },
-
-      //   series: [{
-      //       name: 'promedio de usuarios',
-      //       color: '#7798BF',
-      //       data: <?php echo json_encode(getUsuariosOnlinePorHora()); ?>
-      //     },
-      //   ],
-
-      //   responsive: {
-      //       rules: [{
-      //           condition: {
-      //               maxWidth: 500
-      //           },
-      //           chartOptions: {
-      //               legend: {
-      //                   layout: 'horizontal',
-      //                   align: 'center',
-      //                   verticalAlign: 'bottom'
-      //               }
-      //           }
-      //       }]
-      //   }
-      // });
 
       Highcharts.chart('chartUsuariosPorLevel', {
         title: {
@@ -434,7 +356,7 @@ $stats = getGeneralStats();
           text: 'Promedio de usuarios matados por clase'
         },
         subtitle: {
-          text: 'solo contando niveles mayores o iguales a 25'
+          text: 'todos los personajes del servidor'
         },
         xAxis: {
           categories: chartData.map(x => x.name),
