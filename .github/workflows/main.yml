@@ -6,7 +6,6 @@ on:
 
 jobs:
   generate:
-    if: github.event.label.name == 'aider'
     uses: ao-org/.github/.github/workflows/aider-on-issue-labeled.yml@master
     with:
       issue-number: ${{ github.event.issue.number }}
