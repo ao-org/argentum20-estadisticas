@@ -93,12 +93,6 @@ function getClase($classId) {
             $clase = 'Trabajador';
             break;
         case 10:
-            $clase = 'Pirata';
-            break;
-        case 11:
-            $clase = 'Ladron';
-            break;
-        case 12:
             $clase = 'Bandido';
             break;
         default:
