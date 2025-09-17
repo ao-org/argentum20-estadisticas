@@ -256,16 +256,14 @@ $stats = getGeneralStats();
         xAxis: {
           categories: [
             'Mago',
-            'Clerigo',
+            'Clérigo',
             'Guerrero',
             'Asesino',
-            'Ladrón',
             'Bardo',
             'Druida',
             'Paladin',
             'Cazador',
             'Trabajador',
-            'Pirata',
             'Bandido'
           ],
           crosshair: true
