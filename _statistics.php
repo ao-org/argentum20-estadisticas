@@ -95,6 +95,9 @@ function getClase($classId) {
         case 10:
             $clase = 'Bandido';
             break;
+        case 12:
+            $clase = 'Bandido';
+            break;
         default:
             $clase = 'Otra';
             break;
@@ -224,8 +227,9 @@ function getKillsPorClase()
         FROM user
         WHERE deleted = FALSE
             AND guild_index <> 1
+            AND class_id IN (1,2,3,4,5,6,7,8,9,12)
         GROUP BY class_id
-        HAVING promedio_matados >= 1
+        HAVING promedio_matados > 0
         ORDER BY AVG(ciudadanos_matados + criminales_matados) DESC;
 SQL;
 
