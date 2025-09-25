@@ -96,6 +96,13 @@ $stats = getGeneralStats();
   <div class="card mb-3">
     <div class="card-header">Cantidad de items</div>
     <div class="card-body">
+      <div class="mb-2 d-flex flex-wrap align-items-center">
+        <div class="input-group mr-2" style="max-width: 420px;">
+          <input id="itemsSearchInput" class="form-control" list="itemsDatalist" placeholder="Buscar item y mostrar" />
+          <datalist id="itemsDatalist"></datalist>
+        </div>
+        <button id="itemsDeselectAllBtn" type="button" class="btn btn-sm btn-secondary">Deseleccionar todos</button>
+      </div>
       <figure class="highcharts-figure">
         <div id="itemsQuantity"></div>
       </figure>
@@ -179,7 +186,8 @@ $stats = getGeneralStats();
         for (let itemName in chartData) {
           series.push({
             name: itemName,
-            data: chartData[itemName]
+            data: chartData[itemName],
+            visible: false
           });
         }
 
@@ -201,6 +209,42 @@ $stats = getGeneralStats();
           },
           series: series
         });
+
+        // Populate datalist with all item names
+        var dataListEl = document.getElementById('itemsDatalist');
+        if (dataListEl) {
+          dataListEl.innerHTML = '';
+          series.map(s => s.name).sort().forEach(function(name) {
+            var option = document.createElement('option');
+            option.value = name;
+            dataListEl.appendChild(option);
+          });
+        }
+
+        // Wire search input to show only the selected series
+        var searchInput = document.getElementById('itemsSearchInput');
+        if (searchInput) {
+          var selectHandler = function() {
+            var value = searchInput.value;
+            if (!value) return;
+            var selectedSeries = chart.series.find(function(s) { return (s.name || '').toLowerCase() === value.toLowerCase(); });
+            if (!selectedSeries) return;
+            chart.series.forEach(function(s) { s.setVisible(false, false); });
+            selectedSeries.setVisible(true, false);
+            chart.redraw();
+          };
+          searchInput.addEventListener('change', selectHandler);
+          searchInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') selectHandler(); });
+        }
+
+        // Deselect all button
+        var deselectBtn = document.getElementById('itemsDeselectAllBtn');
+        if (deselectBtn) {
+          deselectBtn.addEventListener('click', function() {
+            chart.series.forEach(function(s) { s.setVisible(false, false); });
+            chart.redraw();
+          });
+        }
       }
     });
 
