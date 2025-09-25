@@ -174,8 +174,16 @@ SQL;
 
     $result = array();
 
+    // Orden fijo de clases válidas: 1..9 y 12 (excluye 10 y 11/pirata u obsoletas)
+    $validClassIds = array(1, 2, 3, 4, 5, 6, 7, 8, 9, 12);
+    $classIdToIndex = array();
+    foreach ($validClassIds as $idx => $cid) {
+        $classIdToIndex[$cid] = $idx;
+    }
+
     for ($i = 1; $i < 7 ; $i++) {
-        $arrayClases = array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        // diez slots en el orden de $validClassIds
+        $arrayClases = array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         $result[$i] = array(
             'name' => getRaza($i),
             'data' => $arrayClases
@@ -183,7 +191,12 @@ SQL;
     }
 
     foreach ($clasesPorRaza as $entry) {
-        $result[$entry['race_id']]['data'][$entry['class_id'] - 1] = intval($entry['count']);
+        $classId = intval($entry['class_id']);
+        if (isset($classIdToIndex[$classId])) {
+            $idx = $classIdToIndex[$classId];
+            $result[$entry['race_id']]['data'][$idx] = intval($entry['count']);
+        }
+        // Ignorar clases no válidas (10, 11, etc.)
     }
 
     $result = array_values($result);
