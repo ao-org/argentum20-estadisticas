@@ -7,13 +7,18 @@ $stats = getGeneralStats();
 <html lang="en">
 
 <head>
+  <meta charset="utf-8">
+  <title>AO20 - Estadisticas</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="shortcut icon" href="/favicon.ico">
   <!-- Bootstrap core CSS -->
   <link href="./vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
 
   <link href="./vendor/bootstrap/css/bootswatch.min.css" rel="stylesheet">
 
-  <!-- Favicon -->
   <link href="./css/cucsi.css" rel="stylesheet">
+  
+</head>
 
 <body>
 
