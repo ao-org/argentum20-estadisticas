@@ -197,21 +197,29 @@ function getUsuariosPorLevel()
         SELECT level, COUNT(id) as count
         FROM user
         WHERE deleted = false
-            AND guild_index <> 1
+            AND level >= 1
         GROUP BY level
         ORDER BY level ASC;
 SQL;
 
     $usuariosPorLevel = executeGetMultipleRowsQuery($query);
 
-    $result = array();
-
-    for ($i = 14; $i <= 54 ; $i++) {
-        $result[] = 0;
-    }
+    $levelToCount = array();
+    $maxLevel = 1;
 
     foreach ($usuariosPorLevel as $entry) {
-        $result[$entry['level'] - 14] = intval($entry['count']);
+        $level = intval($entry['level']);
+        $count = intval($entry['count']);
+        $levelToCount[$level] = $count;
+        if ($level > $maxLevel) {
+            $maxLevel = $level;
+        }
+    }
+
+    $result = array();
+    // Build a dense array starting at level 1 (index 0) to keep pointStart alignment
+    for ($level = 1; $level <= $maxLevel; $level++) {
+        $result[] = isset($levelToCount[$level]) ? $levelToCount[$level] : 0;
     }
 
     return $result;
