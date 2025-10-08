@@ -14,8 +14,6 @@ INSERT INTO `account` (`id`, `username`, `password`, `email`, `created_at`) VALU
 
 -- Sample characters with varied classes, races, and levels
 INSERT INTO `user` (`id`, `account_id`, `name`, `class_id`, `race_id`, `level`, `ciudadanos_matados`, `criminales_matados`, `guild_index`, `deleted`) VALUES
--- Admin guild character (guild_index = 1, will be excluded from stats)
-(1, 6, 'AdminChar', 3, 1, 50, 0, 0, 1, 0),
 
 -- Regular players
 (2, 1, 'MagoElfico', 1, 2, 25, 5, 12, 0, 0),
@@ -26,7 +24,7 @@ INSERT INTO `user` (`id`, `account_id`, `name`, `class_id`, `race_id`, `level`, 
 (7, 3, 'DruidaElfo', 6, 2, 31, 8, 5, 0, 0),
 (8, 4, 'PaladinHumano', 7, 1, 38, 12, 2, 0, 0),
 (9, 4, 'CazadorOrco', 8, 6, 22, 18, 15, 0, 0),
-(10, 5, 'TrabajadorHumano', 9, 1, 15, 0, 1, 0, 0),
+(10, 5, 'TrabajadorHumano', 9, 1, 15, 3, 1, 0, 0),
 (11, 5, 'BandidoOrco', 10, 6, 33, 22, 28, 0, 0),
 
 -- More characters for better statistics
@@ -38,7 +36,7 @@ INSERT INTO `user` (`id`, `account_id`, `name`, `class_id`, `race_id`, `level`, 
 (17, 1, 'DruidaEnano2', 6, 5, 27, 6, 3, 0, 0),
 (18, 2, 'PaladinElfo2', 7, 2, 35, 15, 8, 0, 0),
 (19, 3, 'CazadorHumano2', 8, 1, 29, 12, 18, 0, 0),
-(20, 4, 'TrabajadorGnomo2', 9, 4, 16, 0, 0, 0, 0),
+(20, 4, 'TrabajadorGnomo2', 9, 4, 16, 2, 0, 0, 0),
 (21, 5, 'BandidoHumano2', 10, 1, 37, 30, 25, 0, 0),
 
 -- Some deleted characters (for testing deleted = 1 filter)
