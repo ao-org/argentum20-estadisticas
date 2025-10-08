@@ -16,9 +16,8 @@ Página de estadísticas del server de Argentum Online
 
 ### Inicio Rápido para Desarrollo Local
 
-1. **Configuración**: Ejecuta en la terminal `c:/xampp/php/php.exe dev_database/setup.php`
-2. **Configurar**: Copia `dev_database/environment.dev.php` a `environment.php` (a la carpeta raiz de este repositorio)
-3. **Probar**: Inicia Apache desde XAMPP y abre la aplicación en tu navegador (por defecto http://localhost/argentum20-estadisticas/)
+1. **Configuración**: Ejecuta en la terminal `c:/xampp/php/php.exe dev_database/setup.php` (esto creará automáticamente la base de datos y el archivo `environment.php`)
+2. **Probar**: Inicia Apache desde XAMPP y abre la aplicación en tu navegador (por defecto http://localhost/argentum20-estadisticas/)
 
 ### Base de Datos de Desarrollo
 
@@ -33,13 +32,9 @@ La carpeta `dev_database/` contiene todo lo necesario para desarrollo local:
 
 ### Configuración del Entorno
 
-Copia el archivo de entorno de desarrollo:
+El script de configuración crea automáticamente el archivo `environment.php` con la configuración de desarrollo.
 
-```cmd
-copy dev_database\environment.dev.php environment.php
-```
-
-Ajusta las credenciales de la base de datos en `environment.php` si es necesario:
+Si necesitas ajustar las credenciales de la base de datos en `environment.php`, puedes modificar:
 
 - `$databaseHost` - Usualmente 'localhost'
 - `$databaseUserRead` - Tu usuario de MySQL (a menudo 'root')

@@ -110,11 +110,25 @@ echo "Online statistics records: " . $row['count'] . "\n\n";
 
 $conn->close();
 
-echo "=== Setup Complete! ===\n\n";
+// Create environment.php in root folder
+echo "Creating environment.php configuration file...\n";
+$environmentContent = file_get_contents(__DIR__ . '/environment.dev.php');
+if ($environmentContent === false) {
+    echo "Warning: Could not read environment.dev.php file.\n";
+} else {
+    $rootEnvironmentPath = dirname(__DIR__) . '/environment.php';
+    if (file_put_contents($rootEnvironmentPath, $environmentContent) !== false) {
+        echo "Environment configuration created at: environment.php\n";
+    } else {
+        echo "Warning: Could not create environment.php file. Please copy manually.\n";
+    }
+}
+
+echo "\n=== Setup Complete! ===\n\n";
 echo "Next steps:\n";
-echo "1. Copy 'dev_database/environment.dev.php' to 'environment.php'\n";
-echo "2. Start your local web server\n";
-echo "3. Open the application in your browser\n\n";
-echo "Note: Make sure your MySQL server is running and accessible with the configured credentials.\n";
+echo "1. Start Apache from XAMPP control panel\n";
+echo "2. Open the application in your browser (http://localhost/argentum20-estadisticas/)\n\n";
+echo "Note: Make sure MySQL is running in XAMPP and accessible with the configured credentials.\n";
+echo "If you need to adjust database credentials, edit the 'environment.php' file in the root folder.\n";
 
 ?>
