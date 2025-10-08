@@ -397,7 +397,7 @@ $stats = getGeneralStats();
           text: 'Usuarios por nivel'
         },
         subtitle: {
-          text: 'solo contando niveles mayores a 13'
+          text: 'Cantidad de usuarios existentes por cada nivel de personaje'
         },
         yAxis: {
           title: {
@@ -420,7 +420,7 @@ $stats = getGeneralStats();
             label: {
               connectorAllowed: false
             },
-            pointStart: 14
+            pointStart: 1
           }
         },
 
