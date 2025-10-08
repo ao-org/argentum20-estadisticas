@@ -27,7 +27,6 @@ La carpeta `dev_database/` contiene todo lo necesario para desarrollo local:
 - `sample_data.sql` - Datos de ejemplo para desarrollo y pruebas
 - `setup.php` - Script PHP para inicializar la base de datos de desarrollo
 - `environment.dev.php` - Configuración del entorno de desarrollo local
-- `reset.php` - Script para resetear la base de datos con datos frescos
 - `generate_more_data.php` - Script para generar datos de ejemplo adicionales
 
 ### Configuración del Entorno
@@ -42,12 +41,6 @@ Si necesitas ajustar las credenciales de la base de datos en `environment.php`, 
 - `$databaseName` - Nombre de la base de datos ('ao_stats_dev')
 
 ### Scripts de Desarrollo
-
-**Resetear Base de Datos** - Para empezar de nuevo con datos limpios:
-
-```cmd
-c:/xampp/php/php.exe dev_database/reset.php
-```
 
 **Generar Más Datos** - Para agregar más personajes y estadísticas para pruebas:
 
