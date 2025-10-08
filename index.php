@@ -7,13 +7,18 @@ $stats = getGeneralStats();
 <html lang="en">
 
 <head>
+  <meta charset="utf-8">
+  <title>AO20 - Estadisticas</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="shortcut icon" href="/favicon.ico">
   <!-- Bootstrap core CSS -->
   <link href="./vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
 
   <link href="./vendor/bootstrap/css/bootswatch.min.css" rel="stylesheet">
 
-  <!-- Favicon -->
   <link href="./css/cucsi.css" rel="stylesheet">
+  
+</head>
 
 <body>
 
@@ -162,10 +167,13 @@ $stats = getGeneralStats();
       url: "https://api.ao20.com.ar:2083/statistics/getItemsStatistics",
       success: function(data) {
         let chartData = {};
+        let itemIds = {};
 
+        // Store item IDs along with names
         data.forEach((item) => {
           if (!chartData[item.NAME]) {
             chartData[item.NAME] = [];
+            itemIds[item.NAME] = item.item_id;
           }
 
           chartData[item.NAME].push({
@@ -174,12 +182,105 @@ $stats = getGeneralStats();
           });
         });
 
+        // Define default visible items by ID
+        const defaultVisibleIds = [
+          474, // barca
+          475, // galera
+          478, // galeón patreon
+          58,  // leña
+          2781, // leña élfica
+          192, // mineral de hierro
+          193, // mineral de plata
+          194, // mineral de oro
+          3391, // mineral de carbón
+          3787, // mineral de blodium
+          386, // lingote de hierro
+          387, // lingote de plata
+          388, // lingote de oro
+          124, // katana
+          126, // espada de plata
+          131, // espada zafiro
+          132, // casco de hierro completo
+          360, // armadura de cazador
+          366, // daga +3
+          367, // daga +4
+          398, // sable maestro
+          399, // cimitarra
+          402, // espada matadragones
+          495, // Armadura escarlata
+          496, // Armadura de la Luz
+          601, // casco de plata
+          1098, // placas de gala
+          1099, // armadura de placas
+          1246, // hacha de guerra dos filos
+          1702, // escudo del valle
+          1767, // casco del cazador
+          1825, // nudillo de mithril
+          1907, // cota del gran cazador
+          1911, // armadura pesada
+          1929, // armadura de las sombras
+          1941, // armadura de la cienaga
+          1987, // armadura de placas completa
+          2323, // anillo de disolución
+          2598, // guante de lucha
+          2801, // coraza compuesta
+          2804, // armadura caranthir
+          2920, // cota de minero experto
+          2933, // escudo de plata
+          3769, // relicario
+          3770, // relicario sagrado
+          40,  // flauta élfica
+          41,  // laúd élfico
+          469, // laúd mágico
+          540, // flauta mágica
+          3550, // flecha +1
+          551, // flecha +2
+          552, // flecha élfica
+          553, // flecha +3
+          1722, // rodela reforzada
+          1724, // escudo de roble
+          1788, // báculo engarzado
+          1797, // bastón nudoso
+          1869, // arco maestro
+          1870, // arco de roble
+          1876, // arco de cazador
+          3801, // carcaj
+          3802, // carcaj +2
+          3803, // carcaj +3
+          3806, // carcaj +1
+          3984, // cruz mágica
+          1758, // casco de oso
+          1769, // capucha reforzada
+          3990, // sombrero de mago superior
+          4933, // sombrero de hechicero
+          4934, // casco de tigre
+          4935, // capucha de élite
+          4936, // sombrero ideal
+          519, // túnica legendaria
+          530, // túnica de druida
+          2916, // atavío oscuro
+          36,  // poción de agilidad
+          37,  // poción de maná
+          38,  // poción de vida
+          39,  // pocion de fuerza
+          169, // pocion de energia
+          889, // agilidad alquimia
+          891, // vida alquimia
+          892, // fuerza alquimia
+          894, // mana alquimia
+          3894 // poción de veneno alquimia
+        ];
+
         let series = [];
 
         for (let itemName in chartData) {
+          const itemId = itemIds[itemName];
+          const isVisible = defaultVisibleIds.includes(itemId);
+          
           series.push({
             name: itemName,
-            data: chartData[itemName]
+            data: chartData[itemName],
+            visible: isVisible
           });
         }
 
@@ -256,16 +357,14 @@ $stats = getGeneralStats();
         xAxis: {
           categories: [
             'Mago',
-            'Clerigo',
+            'Clérigo',
             'Guerrero',
             'Asesino',
-            'Ladrón',
             'Bardo',
             'Druida',
             'Paladin',
             'Cazador',
             'Trabajador',
-            'Pirata',
             'Bandido'
           ],
           crosshair: true
@@ -298,7 +397,7 @@ $stats = getGeneralStats();
           text: 'Usuarios por nivel'
         },
         subtitle: {
-          text: 'solo contando niveles mayores a 13'
+          text: 'Cantidad de usuarios existentes por cada nivel de personaje'
         },
         yAxis: {
           title: {
@@ -321,7 +420,7 @@ $stats = getGeneralStats();
             label: {
               connectorAllowed: false
             },
-            pointStart: 14
+            pointStart: 1
           }
         },
 

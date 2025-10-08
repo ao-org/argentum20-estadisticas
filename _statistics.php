@@ -92,7 +92,7 @@ function getClase($classId) {
         case 9:
             $clase = 'Trabajador';
             break;
-        case 10:
+        case 12:
             $clase = 'Bandido';
             break;
         default:
@@ -174,8 +174,16 @@ SQL;
 
     $result = array();
 
+    // Orden fijo de clases válidas: 1..9 y 12 (excluye 10 y 11/pirata u obsoletas)
+    $validClassIds = array(1, 2, 3, 4, 5, 6, 7, 8, 9, 12);
+    $classIdToIndex = array();
+    foreach ($validClassIds as $idx => $cid) {
+        $classIdToIndex[$cid] = $idx;
+    }
+
     for ($i = 1; $i < 7 ; $i++) {
-        $arrayClases = array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        // diez slots en el orden de $validClassIds
+        $arrayClases = array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         $result[$i] = array(
             'name' => getRaza($i),
             'data' => $arrayClases
@@ -183,7 +191,12 @@ SQL;
     }
 
     foreach ($clasesPorRaza as $entry) {
-        $result[$entry['race_id']]['data'][$entry['class_id'] - 1] = intval($entry['count']);
+        $classId = intval($entry['class_id']);
+        if (isset($classIdToIndex[$classId])) {
+            $idx = $classIdToIndex[$classId];
+            $result[$entry['race_id']]['data'][$idx] = intval($entry['count']);
+        }
+        // Ignorar clases no válidas (10, 11, etc.)
     }
 
     $result = array_values($result);
@@ -197,21 +210,29 @@ function getUsuariosPorLevel()
         SELECT level, COUNT(id) as count
         FROM user
         WHERE deleted = false
-            AND guild_index <> 1
+            AND level >= 1
         GROUP BY level
         ORDER BY level ASC;
 SQL;
 
     $usuariosPorLevel = executeGetMultipleRowsQuery($query);
 
-    $result = array();
-
-    for ($i = 14; $i <= 54 ; $i++) {
-        $result[] = 0;
-    }
+    $levelToCount = array();
+    $maxLevel = 1;
 
     foreach ($usuariosPorLevel as $entry) {
-        $result[$entry['level'] - 14] = intval($entry['count']);
+        $level = intval($entry['level']);
+        $count = intval($entry['count']);
+        $levelToCount[$level] = $count;
+        if ($level > $maxLevel) {
+            $maxLevel = $level;
+        }
+    }
+
+    $result = array();
+    // Build a dense array starting at level 1 (index 0) to keep pointStart alignment
+    for ($level = 1; $level <= $maxLevel; $level++) {
+        $result[] = isset($levelToCount[$level]) ? $levelToCount[$level] : 0;
     }
 
     return $result;
@@ -224,8 +245,9 @@ function getKillsPorClase()
         FROM user
         WHERE deleted = FALSE
             AND guild_index <> 1
+            AND class_id IN (1,2,3,4,5,6,7,8,9,12)
         GROUP BY class_id
-        HAVING promedio_matados >= 1
+        HAVING promedio_matados > 0
         ORDER BY AVG(ciudadanos_matados + criminales_matados) DESC;
 SQL;
 
