@@ -16,7 +16,7 @@ Página de estadísticas del server de Argentum Online
 
 ### Inicio Rápido para Desarrollo Local
 
-1. **Configuración**: Ejecuta en la terminal `c:/xampp/php/php.exe dev_database/setup.php` (esto creará automáticamente la base de datos y el archivo `environment.php`)
+1. **Configuración**: Ejecuta en la terminal `c:/xampp/php/php.exe dev_database/setup.php` (esto creará automáticamente la base de datos y el archivo `environment.php si no existe`)
 2. **Probar**: Inicia Apache desde XAMPP y abre la aplicación en tu navegador (por defecto http://localhost/argentum20-estadisticas/)
 
 ### Base de Datos de Desarrollo
@@ -32,9 +32,9 @@ La carpeta `dev_database/` contiene todo lo necesario para desarrollo local:
 
 ### Configuración del Entorno
 
-El script de configuración crea automáticamente el archivo `environment.php` con la configuración de desarrollo.
+El script de configuración (dev_database/setup.php) crea automáticamente el archivo `environment.php` con la configuración de desarrollo.
 
-Si necesitas ajustar las credenciales de la base de datos en `environment.php`, puedes modificar:
+Si necesitas ajustar las credenciales de la base de datos en `environment.php`, podes modificar:
 
 - `$databaseHost` - Usualmente 'localhost'
 - `$databaseUserRead` - Tu usuario de MySQL (a menudo 'root')
@@ -54,16 +54,6 @@ c:/xampp/php/php.exe dev_database/reset.php
 ```cmd
 c:/xampp/php/php.exe dev_database/generate_more_data.php
 ```
-
-### Esquema de Base de Datos
-
-**Tablas Principales:**
-
-- `account` - Cuentas de usuario
-- `user` - Personajes del juego con clase, raza, nivel, kills, etc.
-- `statistics_users_online` - Conteos de usuarios online por hora
-- `character_classes` - Tabla de referencia para nombres de clases
-- `character_races` - Tabla de referencia para nombres de razas
 
 **Nota: La carpeta `dev_database/` y su contenido son solo para propósitos de desarrollo y nunca deben usarse en producción.**
 
