@@ -38,6 +38,14 @@ if ($conn->query($sql) === TRUE) {
 // Select the database
 $conn->select_db($databaseName);
 
+// Clean up any existing tables first
+echo "Cleaning up existing tables...\n";
+$tables = ['statistics_users_online', 'user', 'account', 'character_classes', 'character_races'];
+foreach ($tables as $table) {
+    $conn->query("DROP TABLE IF EXISTS `$table`");
+}
+echo "Cleanup completed.\n\n";
+
 // Execute schema
 echo "Setting up database schema...\n";
 $schema = file_get_contents(__DIR__ . '/schema.sql');
@@ -45,15 +53,20 @@ if ($schema === false) {
     die("Error: Could not read schema.sql file.\n");
 }
 
-// Split and execute SQL statements
-$statements = array_filter(array_map('trim', explode(';', $schema)));
-foreach ($statements as $statement) {
-    if (!empty($statement) && !preg_match('/^--/', $statement)) {
-        if ($conn->query($statement) === FALSE) {
-            echo "Warning: Error executing statement: " . $conn->error . "\n";
-            echo "Statement: " . substr($statement, 0, 100) . "...\n\n";
+// Execute the entire schema file using multi_query
+if ($conn->multi_query($schema)) {
+    do {
+        // Store first result set
+        if ($result = $conn->store_result()) {
+            $result->free();
         }
-    }
+        // Print divider between results
+        if ($conn->more_results()) {
+            // Continue to next result
+        }
+    } while ($conn->next_result());
+} else {
+    echo "Error executing schema: " . $conn->error . "\n";
 }
 echo "Schema setup completed.\n\n";
 
@@ -64,15 +77,20 @@ if ($sampleData === false) {
     die("Error: Could not read sample_data.sql file.\n");
 }
 
-// Split and execute SQL statements
-$statements = array_filter(array_map('trim', explode(';', $sampleData)));
-foreach ($statements as $statement) {
-    if (!empty($statement) && !preg_match('/^--/', $statement)) {
-        if ($conn->query($statement) === FALSE) {
-            echo "Warning: Error executing statement: " . $conn->error . "\n";
-            echo "Statement: " . substr($statement, 0, 100) . "...\n\n";
+// Execute the entire sample data file using multi_query
+if ($conn->multi_query($sampleData)) {
+    do {
+        // Store first result set
+        if ($result = $conn->store_result()) {
+            $result->free();
         }
-    }
+        // Print divider between results
+        if ($conn->more_results()) {
+            // Continue to next result
+        }
+    } while ($conn->next_result());
+} else {
+    echo "Error executing sample data: " . $conn->error . "\n";
 }
 echo "Sample data inserted successfully.\n\n";
 
