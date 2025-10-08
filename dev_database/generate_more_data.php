@@ -32,16 +32,16 @@ echo "Generating $numChars additional characters...\n";
 
 // Character name prefixes by class
 $classPrefixes = [
-    1 => ['Mago', 'Wizard', 'Arcano', 'Mystic'],
-    2 => ['Clerigo', 'Priest', 'Santo', 'Divine'],
-    3 => ['Guerrero', 'Knight', 'Warrior', 'Fighter'],
-    4 => ['Asesino', 'Shadow', 'Killer', 'Ninja'],
-    5 => ['Bardo', 'Minstrel', 'Song', 'Music'],
-    6 => ['Druida', 'Nature', 'Forest', 'Wild'],
-    7 => ['Paladin', 'Holy', 'Light', 'Sacred'],
-    8 => ['Cazador', 'Hunter', 'Ranger', 'Scout'],
-    9 => ['Trabajador', 'Worker', 'Craft', 'Builder'],
-    10 => ['Bandido', 'Thief', 'Rogue', 'Bandit']
+    1 => ['Mago'],
+    2 => ['Clerigo'],
+    3 => ['Guerrero'],
+    4 => ['Asesino'],
+    5 => ['Bardo'],
+    6 => ['Druida'],
+    7 => ['Paladin'],
+    8 => ['Cazador'],
+    9 => ['Trabajador'],
+    12 => ['Bandido']
 ];
 
 // Get current max account and user IDs
@@ -57,9 +57,10 @@ for ($i = 1; $i <= $numChars; $i++) {
     $userId = $maxUserId + $i;
     
     // Random character data
-    $classId = rand(1, 10);
+    $validClassIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 12];
+    $classId = $validClassIds[array_rand($validClassIds)];
     $raceId = rand(1, 6);
-    $level = rand(14, 50); // Focus on higher levels as per original query
+    $level = rand(1, 50); // Focus on higher levels as per original query
     $ciudadanosMatados = rand(0, 50);
     $criminalesMatados = rand(0, 40);
     

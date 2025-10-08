@@ -25,7 +25,7 @@ INSERT INTO `user` (`id`, `account_id`, `name`, `class_id`, `race_id`, `level`, 
 (8, 4, 'PaladinHumano', 7, 1, 38, 12, 2, 0, 0),
 (9, 4, 'CazadorOrco', 8, 6, 22, 18, 15, 0, 0),
 (10, 5, 'TrabajadorHumano', 9, 1, 15, 3, 1, 0, 0),
-(11, 5, 'BandidoOrco', 10, 6, 33, 22, 28, 0, 0),
+(11, 5, 'BandidoOrco', 12, 6, 33, 22, 28, 0, 0),
 
 -- More characters for better statistics
 (12, 1, 'MagoHumano2', 1, 1, 20, 3, 7, 0, 0),
@@ -37,7 +37,7 @@ INSERT INTO `user` (`id`, `account_id`, `name`, `class_id`, `race_id`, `level`, 
 (18, 2, 'PaladinElfo2', 7, 2, 35, 15, 8, 0, 0),
 (19, 3, 'CazadorHumano2', 8, 1, 29, 12, 18, 0, 0),
 (20, 4, 'TrabajadorGnomo2', 9, 4, 16, 2, 0, 0, 0),
-(21, 5, 'BandidoHumano2', 10, 1, 37, 30, 25, 0, 0),
+(21, 5, 'BandidoHumano2', 12, 1, 37, 30, 25, 0, 0),
 
 -- Some deleted characters (for testing deleted = 1 filter)
 (22, 1, 'DeletedChar1', 1, 1, 20, 5, 3, 0, 1),

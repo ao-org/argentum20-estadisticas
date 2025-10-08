@@ -73,7 +73,7 @@ INSERT INTO `character_classes` (`id`, `name`) VALUES
 (7, 'Paladin'),
 (8, 'Cazador'),
 (9, 'Trabajador'),
-(10, 'Bandido');
+(12, 'Bandido');
 
 -- Race reference data
 CREATE TABLE IF NOT EXISTS `character_races` (
