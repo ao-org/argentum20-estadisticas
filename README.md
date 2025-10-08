@@ -12,13 +12,13 @@ Página de estadísticas del server de Argentum Online
 
 - **XAMPP**: Instala XAMPP en `C:/xampp/` (descarga desde https://www.apachefriends.org/)
 - Ejecuta Xampp
-- Asegúrate de que MySQL esté ejecutándose desde el panel de control de XAMPP
 
 ### Inicio Rápido para Desarrollo Local
 
-1. **Configuración**: Ejecuta en la terminal `c:/xampp/php/php.exe dev_database/setup.php` (esto creará automáticamente la base de datos y el archivo `environment.php si no existe`)
-2. **Localizar repositorio**: Colocar este repositorio en la carpeta `C:\xampp\htdocs`
-3. **Probar**: Inicia Apache desde XAMPP y abre la aplicación en tu navegador (por defecto `http://localhost/argentum20-estadisticas/`)
+1. **Localizar repositorio**: Colocar este repositorio en la carpeta `C:\xampp\htdocs`
+2. **Preparar el servidor y la base de datos**: Inicia MySql y Apache desde XAMPP
+3. **Configuración**: Ejecuta en la terminal `c:/xampp/php/php.exe dev_database/setup.php` (esto creará automáticamente la base de datos y el archivo `environment.php si no existe`)
+4. **Probar**: Abrir la aplicación en tu navegador (por defecto `http://localhost/argentum20-estadisticas/`)
 
 ### Base de Datos de Desarrollo
 
