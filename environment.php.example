@@ -1,9 +1,9 @@
 <?php
 
-$databaseHost = '';
-$databaseUserRead = '';
-$databasePasswordRead = '';
-$databaseName = '';
+$databaseHost = 'localhost';
+$databaseUserRead = 'root';  // Adjust according to your local MySQL setup
+$databasePasswordRead = '';  // Adjust according to your local MySQL setup
+$databaseName = 'ao_stats_dev';
 $databasePort = 3306;
 
 ?>
