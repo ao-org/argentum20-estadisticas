@@ -110,17 +110,22 @@ echo "Online statistics records: " . $row['count'] . "\n\n";
 
 $conn->close();
 
-// Create environment.php in root folder
-echo "Creating environment.php configuration file...\n";
-$environmentContent = file_get_contents(__DIR__ . '/environment.dev.php');
-if ($environmentContent === false) {
-    echo "Warning: Could not read environment.dev.php file.\n";
+// Create environment.php in root folder if it doesn't exist
+$rootEnvironmentPath = dirname(__DIR__) . '/environment.php';
+if (file_exists($rootEnvironmentPath)) {
+    echo "Environment configuration file already exists at: environment.php\n";
+    echo "Skipping environment.php creation to avoid overwriting existing configuration.\n";
 } else {
-    $rootEnvironmentPath = dirname(__DIR__) . '/environment.php';
-    if (file_put_contents($rootEnvironmentPath, $environmentContent) !== false) {
-        echo "Environment configuration created at: environment.php\n";
+    echo "Creating environment.php configuration file...\n";
+    $environmentContent = file_get_contents(__DIR__ . '/environment.dev.php');
+    if ($environmentContent === false) {
+        echo "Warning: Could not read environment.dev.php file.\n";
     } else {
-        echo "Warning: Could not create environment.php file. Please copy manually.\n";
+        if (file_put_contents($rootEnvironmentPath, $environmentContent) !== false) {
+            echo "Environment configuration created at: environment.php\n";
+        } else {
+            echo "Warning: Could not create environment.php file. Please copy manually.\n";
+        }
     }
 }
 
