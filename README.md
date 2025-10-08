@@ -6,12 +6,19 @@ Página de estadísticas del server de Argentum Online
 
 ## Configuración de Desarrollo
 
+### Prerequisitos
+
+**Nota: Sugerimos usar XAMPP, pero se puede usar cualquier servidor de desarrollo local web que soporte PHP**
+
+- **XAMPP**: Instala XAMPP en `C:/xampp/` (descarga desde https://www.apachefriends.org/)
+- Ejecuta Xampp
+- Asegúrate de que MySQL esté ejecutándose desde el panel de control de XAMPP
+
 ### Inicio Rápido para Desarrollo Local
 
-1. **Prerequisitos**: Asegúrate de tener MySQL ejecutándose localmente
-2. **Configuración**: Ejecuta `php dev_database/setup.php`
-3. **Configurar**: Copia `dev_database/environment.dev.php` a `environment.php`
-4. **Probar**: Inicia tu servidor web y abre la aplicación
+1. **Configuración**: Ejecuta en la terminal `c:/xampp/php/php.exe dev_database/setup.php`
+2. **Configurar**: Copia `dev_database/environment.dev.php` a `environment.php` (a la carpeta raiz de este repositorio)
+3. **Probar**: Inicia Apache desde XAMPP y abre la aplicación en tu navegador (por defecto http://localhost/argentum20-estadisticas/)
 
 ### Base de Datos de Desarrollo
 
@@ -28,8 +35,8 @@ La carpeta `dev_database/` contiene todo lo necesario para desarrollo local:
 
 Copia el archivo de entorno de desarrollo:
 
-```bash
-cp dev_database/environment.dev.php environment.php
+```cmd
+copy dev_database\environment.dev.php environment.php
 ```
 
 Ajusta las credenciales de la base de datos en `environment.php` si es necesario:
@@ -43,14 +50,14 @@ Ajusta las credenciales de la base de datos en `environment.php` si es necesario
 
 **Resetear Base de Datos** - Para empezar de nuevo con datos limpios:
 
-```bash
-php dev_database/reset.php
+```cmd
+c:/xampp/php/php.exe dev_database/reset.php
 ```
 
 **Generar Más Datos** - Para agregar más personajes y estadísticas para pruebas:
 
-```bash
-php dev_database/generate_more_data.php
+```cmd
+c:/xampp/php/php.exe dev_database/generate_more_data.php
 ```
 
 ### Esquema de Base de Datos
