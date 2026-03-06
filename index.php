@@ -1,6 +1,7 @@
 <?php
 include('_statistics.php');
-$stats = getGeneralStats();
+$stats    = getGeneralStats();
+$levelObj = getUsuariosPorLevel(); // ['data'=>[...], 'minLevel'=>13]
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -16,7 +17,6 @@ $stats = getGeneralStats();
 </head>
 <body>
 
-  <!-- Navigation -->
   <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
     <div class="container">
       <img src="img/logo.png" alt="AO Logo" />
@@ -26,7 +26,6 @@ $stats = getGeneralStats();
 
   <div class="main-wrapper">
 
-    <!-- Page Header -->
     <h1 class="page-title">Estadísticas del Servidor</h1>
     <p class="page-subtitle">Datos en tiempo real del mundo de Argentum</p>
     <div class="rune-divider">✦ ᚱ ᚢ ᚾ ᚨ ✦</div>
@@ -45,61 +44,58 @@ $stats = getGeneralStats();
       </div>
     </div>
 
-    <!-- Charts Grid: 2 columns -->
+    <!-- Charts Grid 2 col -->
     <div class="charts-grid">
-
       <div class="card">
         <div class="card-header">Usuarios por Clase</div>
         <div class="card-body">
-          <figure class="highcharts-figure">
-            <div id="chartUsuariosPorClase"></div>
-          </figure>
+          <figure class="highcharts-figure"><div id="chartUsuariosPorClase"></div></figure>
         </div>
       </div>
-
       <div class="card">
-        <div class="card-header">Usuarios Matados por Clase</div>
+        <div class="card-header">Kills Promedio por Clase</div>
         <div class="card-body">
-          <figure class="highcharts-figure">
-            <div id="chartUsuariosMatadosPorClase"></div>
-          </figure>
+          <figure class="highcharts-figure"><div id="chartUsuariosMatadosPorClase"></div></figure>
         </div>
       </div>
-
     </div>
 
-    <!-- Full-width charts -->
     <div class="card">
       <div class="card-header">Clases por Raza</div>
       <div class="card-body">
-        <figure class="highcharts-figure">
-          <div id="chartClasesPorRaza"></div>
-        </figure>
+        <figure class="highcharts-figure"><div id="chartClasesPorRaza"></div></figure>
       </div>
     </div>
 
+    <!-- Nivel: desde lvl 13 -->
     <div class="card">
-      <div class="card-header">Distribución por Nivel</div>
+      <div class="card-header">Distribución por Nivel (desde nivel <?php echo $levelObj['minLevel']; ?>)</div>
       <div class="card-body">
-        <figure class="highcharts-figure">
-          <div id="chartUsuariosPorLevel"></div>
-        </figure>
+        <figure class="highcharts-figure"><div id="chartUsuariosPorLevel"></div></figure>
       </div>
     </div>
 
+    <!-- Oro: solo Total y Banco -->
     <div class="card">
       <div class="card-header">Inflación de Oro</div>
       <div class="card-body">
-        <figure class="highcharts-figure">
-          <div id="goldInflation"></div>
-        </figure>
+        <figure class="highcharts-figure"><div id="goldInflation"></div></figure>
       </div>
     </div>
 
+    <!-- Items: buscador + sin visibles por defecto -->
     <div class="card">
       <div class="card-header">Cantidad de Ítems en Circulación</div>
       <div class="card-body">
-        <figure class="highcharts-figure">
+
+        <!-- Buscador de ítems -->
+        <div class="item-search-bar">
+          <input type="text" id="itemSearchInput" placeholder="Buscar ítem... (ej: leña, espada, poción)" autocomplete="off" />
+          <div id="itemSearchResults" class="item-search-dropdown"></div>
+        </div>
+        <div id="itemSelectedTags" class="item-tags"></div>
+
+        <figure class="highcharts-figure" style="margin-top:16px">
           <div id="itemsQuantity"></div>
         </figure>
       </div>
@@ -114,149 +110,233 @@ $stats = getGeneralStats();
     <footer class="site-footer">
       Argentum Online &copy; <?php echo date('Y'); ?> &mdash; Estadísticas del servidor
     </footer>
-
   </div>
 
-  <!-- Scripts -->
   <script src="./vendor/jquery/jquery.min.js"></script>
   <script src="./vendor/popper/popper.min.js"></script>
   <script src="./vendor/bootstrap/js/bootstrap.min.js"></script>
   <script src="./vendor/Highcharts-8.0.4/code/highcharts.js"></script>
 
   <script>
-  // ── Highcharts dark theme matching our CSS variables ──────────────────────
+  // ── Highcharts global theme ───────────────────────────────────────────────
   Highcharts.setOptions({
     colors: ['#C9952A','#7EB8D4','#A3C27A','#C07A8A','#8AA4C8','#D4A36A','#7ABBA8','#C8C87A','#B47AC8','#7AC8B4'],
     chart: {
       backgroundColor: '#111118',
       style: { fontFamily: "'Crimson Text', Georgia, serif" },
-      plotBorderWidth: 0,
-      plotBorderColor: 'transparent'
+      plotBorderWidth: 0
     },
     title:    { style: { color: '#F2C96A', fontFamily: "'Cinzel', serif", fontSize: '15px', letterSpacing: '0.05em' } },
     subtitle: { style: { color: '#7a6e58' } },
     xAxis: {
-      gridLineColor: 'rgba(201,149,42,0.1)',
-      lineColor:     'rgba(201,149,42,0.2)',
-      tickColor:     'rgba(201,149,42,0.2)',
-      labels: { style: { color: '#7a6e58' } },
-      title: { style: { color: '#7a6e58' } }
+      gridLineColor: 'rgba(201,149,42,0.1)', lineColor: 'rgba(201,149,42,0.2)', tickColor: 'rgba(201,149,42,0.2)',
+      labels: { style: { color: '#7a6e58' } }, title: { style: { color: '#7a6e58' } }
     },
     yAxis: {
-      gridLineColor: 'rgba(201,149,42,0.1)',
-      lineColor:     'rgba(201,149,42,0.2)',
-      tickColor:     'rgba(201,149,42,0.2)',
-      labels: { style: { color: '#7a6e58' } },
-      title: { style: { color: '#7a6e58' } }
+      gridLineColor: 'rgba(201,149,42,0.1)', lineColor: 'rgba(201,149,42,0.2)', tickColor: 'rgba(201,149,42,0.2)',
+      labels: { style: { color: '#7a6e58' } }, title: { style: { color: '#7a6e58' } }
     },
-    legend: {
-      itemStyle: { color: '#D4C5A0', fontFamily: "'Crimson Text', Georgia, serif" },
-      itemHoverStyle: { color: '#F2C96A' }
-    },
-    tooltip: {
-      backgroundColor: '#16161F',
-      borderColor: 'rgba(201,149,42,0.4)',
-      style: { color: '#D4C5A0' }
-    },
-    plotOptions: {
-      series: { borderWidth: 0 },
-      pie: {
-        borderWidth: 2,
-        borderColor: '#111118',
-        dataLabels: { style: { color: '#D4C5A0', textOutline: 'none' } }
-      }
-    },
+    legend: { itemStyle: { color: '#D4C5A0', fontFamily: "'Crimson Text', Georgia, serif" }, itemHoverStyle: { color: '#F2C96A' } },
+    tooltip: { backgroundColor: '#16161F', borderColor: 'rgba(201,149,42,0.4)', style: { color: '#D4C5A0' } },
+    plotOptions: { series: { borderWidth: 0 }, pie: { borderWidth: 2, borderColor: '#111118' } },
     credits: { enabled: false }
   });
 
-  // ── Gold Inflation chart ──────────────────────────────────────────────────
+  // ── Gold: solo Oro Total y Oro en Banco ──────────────────────────────────
   $.ajax({
     url: "https://api.ao20.com.ar:2083/statistics/getGoldStatistics",
     success: function(data) {
-      var datetime = data.map(function(a) {
-        var date = new Date(a.datetime);
-        return (date.getMonth()+1)+'/'+date.getDate()+'/'+date.getFullYear()+' '+date.getHours()+':'+date.getMinutes();
+      // Parsear fechas como timestamps para eje datetime real
+      var points_total = [], points_bank = [];
+      data.forEach(function(a) {
+        var ts = new Date(a.datetime).getTime();
+        points_total.push([ts, Number(a.gold_total)]);
+        points_bank.push([ts,  Number(a.gold_bank)]);
       });
       Highcharts.chart('goldInflation', {
         title: { text: 'Inflación de Oro' },
-        xAxis: { categories: datetime },
+        subtitle: { text: 'Oro Total y Oro en Banco' },
+        xAxis: { type: 'datetime', labels: { format: '{value:%d/%m/%y}', rotation: -45 } },
         yAxis: { title: { text: 'Oro' } },
+        tooltip: { xDateFormat: '%d/%m/%Y %H:%M', shared: true },
         series: [
-          { name: 'Oro Total',                  data: data.map(function(a){ return a.gold_total; }) },
-          { name: 'Oro Inventario',             data: data.map(function(a){ return a.gold_inventory; }) },
-          { name: 'Oro en Banco',               data: data.map(function(a){ return a.gold_bank; }) },
-          { name: 'Oro Inventario (ítem)',       data: data.map(function(a){ return a.gold_inventory_as_item; }) },
-          { name: 'Oro Banco (ítem)',            data: data.map(function(a){ return a.gold_bank_as_item; }) }
+          { name: 'Oro Total', data: points_total, lineWidth: 2 },
+          { name: 'Oro en Banco', data: points_bank, lineWidth: 2 }
         ]
       });
     },
     error: function() {
-      document.getElementById('goldInflation').innerHTML = '<div class="chart-loading">No hay datos disponibles</div>';
+      document.getElementById('goldInflation').innerHTML = '<div class="chart-loading">Sin datos disponibles</div>';
     }
   });
 
-  // ── Items chart ────────────────────────────────────────────────────────────
+  // ── Items chart con buscador ──────────────────────────────────────────────
+  var itemsChart = null;       // referencia al chart de Highcharts
+  var itemsIndex = {};         // id -> { name, points[] }  — catálogo completo
+
   $.ajax({
     url: "https://api.ao20.com.ar:2083/statistics/getItemsStatistics",
     success: function(data) {
-      // Agrupar por item_id (no por NAME) para evitar colisiones con nombres duplicados
-      var byId    = {};   // item_id -> { name, points[] }
-      var nameCount = {}; // nombre -> cuántos IDs distintos lo usan
-
+      // 1. Agrupar por item_id — clave única, evita colisiones por nombre duplicado
+      var nameCount = {};
       data.forEach(function(item) {
-        var id = item.item_id;
-        if (!byId[id]) {
-          byId[id] = { name: item.NAME, points: [] };
+        var id = String(item.item_id);
+        if (!itemsIndex[id]) {
+          itemsIndex[id] = { name: item.NAME, points: [] };
           nameCount[item.NAME] = (nameCount[item.NAME] || 0) + 1;
         }
-        byId[id].points.push({ x: new Date(item.datetime).getTime(), y: Number(item.total_quantity) });
+        // Acumular cantidad por timestamp (suma si hay múltiples registros del mismo ts)
+        var ts  = new Date(item.datetime).getTime();
+        var qty = Number(item.total_quantity);
+        var pts = itemsIndex[id].points;
+        var last = pts.length ? pts[pts.length - 1] : null;
+        if (last && last.x === ts) {
+          last.y += qty; // mismo timestamp → sumar
+        } else {
+          pts.push({ x: ts, y: qty });
+        }
       });
 
-      var defaultVisibleIds = [474,475,478,58,2781,192,193,194,3391,3787,386,387,388,124,126,131,132,360,366,367,398,399,402,495,496,601,1098,1099,1246,1702,1767,1825,1907,1911,1929,1941,1987,2323,2598,2801,2804,2920,2933,3769,3770,40,41,469,540,3550,551,552,553,1722,1724,1788,1797,1869,1870,1876,3801,3802,3803,3806,3984,1758,1769,3990,4933,4934,4935,4936,519,530,2916,36,37,38,39,169,889,891,892,894,3894];
-
-      var series = [];
-      for (var id in byId) {
-        var entry   = byId[id];
-        var numId   = Number(id);
-        // Si el nombre está duplicado entre distintos IDs, agregar "(#ID)" para distinguirlos
-        var label   = (nameCount[entry.name] > 1) ? entry.name + ' (#' + id + ')' : entry.name;
-        // Ordenar los puntos por fecha
+      // 2. Resolver labels: si hay nombre duplicado entre IDs distintos, agregar (#id)
+      Object.keys(itemsIndex).forEach(function(id) {
+        var entry = itemsIndex[id];
+        if (nameCount[entry.name] > 1) entry.label = entry.name + ' (#' + id + ')';
+        else entry.label = entry.name;
+        // Ordenar puntos por fecha
         entry.points.sort(function(a, b) { return a.x - b.x; });
-        series.push({
-          name:    label,
-          data:    entry.points,
-          visible: defaultVisibleIds.indexOf(numId) !== -1
-        });
-      }
-
-      Highcharts.chart('itemsQuantity', {
-        title: { text: 'Ítems en Circulación' },
-        xAxis: { type: 'datetime', labels: { format: '{value:%d/%m/%Y}', rotation: -45 } },
-        yAxis: { title: { text: 'Cantidad' } },
-        tooltip: { xDateFormat: '%d/%m/%Y %H:%M', pointFormat: '<span style="color:{series.color}">\u25CF</span> {series.name}: <b>{point.y}</b><br/>' },
-        series: series
       });
+
+      // 3. Dibujar gráfico vacío (ningún ítem visible por defecto)
+      itemsChart = Highcharts.chart('itemsQuantity', {
+        title: { text: 'Ítems en Circulación' },
+        subtitle: { text: 'Buscá y seleccioná ítems para graficarlos' },
+        xAxis: { type: 'datetime', labels: { format: '{value:%d/%m/%y}', rotation: -45 } },
+        yAxis: { title: { text: 'Cantidad' } },
+        tooltip: {
+          xDateFormat: '%d/%m/%Y %H:%M',
+          pointFormat: '<span style="color:{series.color}">●</span> {series.name}: <b>{point.y}</b><br/>'
+        },
+        legend: { enabled: true, maxHeight: 120 },
+        series: []
+      });
+
+      // 4. Inicializar buscador
+      initItemSearch();
     },
     error: function() {
-      document.getElementById('itemsQuantity').innerHTML = '<div class="chart-loading">No hay datos disponibles</div>';
+      document.getElementById('itemsQuantity').innerHTML = '<div class="chart-loading">Sin datos disponibles</div>';
+      document.querySelector('.item-search-bar').style.display = 'none';
     }
   });
 
-  // ── PHP-data charts (on load) ──────────────────────────────────────────────
+  // ── Lógica del buscador de ítems ─────────────────────────────────────────
+  var selectedItemIds = {}; // ids actualmente graficados
+
+  function initItemSearch() {
+    var input    = document.getElementById('itemSearchInput');
+    var dropdown = document.getElementById('itemSearchResults');
+
+    // Construir lista ordenada alfabéticamente para búsqueda
+    var allItems = Object.keys(itemsIndex).map(function(id) {
+      return { id: id, label: itemsIndex[id].label, nameLower: itemsIndex[id].name.toLowerCase() };
+    }).sort(function(a, b) { return a.label.localeCompare(b.label); });
+
+    input.addEventListener('input', function() {
+      var q = this.value.trim().toLowerCase();
+      dropdown.innerHTML = '';
+      if (q.length < 2) { dropdown.style.display = 'none'; return; }
+
+      var matches = allItems.filter(function(it) { return it.nameLower.indexOf(q) !== -1; }).slice(0, 20);
+
+      if (!matches.length) {
+        dropdown.innerHTML = '<div class="item-search-empty">Sin resultados</div>';
+        dropdown.style.display = 'block';
+        return;
+      }
+
+      matches.forEach(function(it) {
+        var div = document.createElement('div');
+        div.className = 'item-search-option' + (selectedItemIds[it.id] ? ' selected' : '');
+        div.textContent = it.label;
+        div.dataset.id  = it.id;
+        div.addEventListener('mousedown', function(e) {
+          e.preventDefault(); // evitar que el blur del input cierre el dropdown antes del click
+          toggleItem(it.id);
+          // Re-marcar el ítem como selected en el dropdown
+          div.className = 'item-search-option' + (selectedItemIds[it.id] ? ' selected' : '');
+        });
+        dropdown.appendChild(div);
+      });
+      dropdown.style.display = 'block';
+    });
+
+    input.addEventListener('blur', function() {
+      setTimeout(function() { dropdown.style.display = 'none'; }, 150);
+    });
+
+    input.addEventListener('focus', function() {
+      if (this.value.trim().length >= 2) input.dispatchEvent(new Event('input'));
+    });
+  }
+
+  function toggleItem(id) {
+    if (selectedItemIds[id]) {
+      removeItem(id);
+    } else {
+      addItem(id);
+    }
+    renderTags();
+  }
+
+  function addItem(id) {
+    if (!itemsIndex[id] || !itemsChart) return;
+    if (selectedItemIds[id]) return;
+    selectedItemIds[id] = true;
+
+    // Agregar serie al chart existente (sin redibujar todo)
+    itemsChart.addSeries({
+      id:   'item-' + id,
+      name: itemsIndex[id].label,
+      data: itemsIndex[id].points.slice() // copia para no mutar el original
+    }, true, false); // redraw=true, animation=false
+  }
+
+  function removeItem(id) {
+    if (!itemsChart) return;
+    delete selectedItemIds[id];
+    var serie = itemsChart.get('item-' + id);
+    if (serie) serie.remove(true, false);
+  }
+
+  function renderTags() {
+    var container = document.getElementById('itemSelectedTags');
+    container.innerHTML = '';
+    Object.keys(selectedItemIds).forEach(function(id) {
+      if (!itemsIndex[id]) return;
+      var tag = document.createElement('span');
+      tag.className = 'item-tag';
+      tag.innerHTML = itemsIndex[id].label + ' <button class="item-tag-remove" data-id="' + id + '">×</button>';
+      tag.querySelector('button').addEventListener('click', function() {
+        removeItem(this.dataset.id);
+        renderTags();
+      });
+      container.appendChild(tag);
+    });
+  }
+
+  // ── PHP-data charts ───────────────────────────────────────────────────────
   window.onload = function() {
 
     // Usuarios por Clase — Pie
     Highcharts.chart('chartUsuariosPorClase', {
-      chart: { type: 'pie', plotBackgroundColor: null, plotBorderWidth: null, plotShadow: false },
+      chart: { type: 'pie' },
       title: { text: 'Usuarios por Clase' },
       subtitle: { text: 'Todos los personajes del servidor' },
-      tooltip: { pointFormat: '{series.name}: <b>{point.y}</b><br/>{point.percentage:.1f}%' },
+      tooltip: { pointFormat: '{series.name}: <b>{point.y}</b> ({point.percentage:.1f}%)' },
       plotOptions: {
         pie: {
-          allowPointSelect: true,
-          cursor: 'pointer',
-          dataLabels: { enabled: true, format: '<b>{point.name}</b>: {point.y}', style: { color: '#D4C5A0', textOutline: 'none', fontSize: '11px' } },
-          showInLegend: false
+          allowPointSelect: true, cursor: 'pointer', showInLegend: true,
+          dataLabels: { enabled: false }
         }
       },
       series: [{ name: 'Usuarios', colorByPoint: true, data: <?php echo json_encode(getUsuariosPorClase()); ?> }]
@@ -275,43 +355,46 @@ $stats = getGeneralStats();
       tooltip: {
         headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
         pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td><td style="padding:0"><b>{point.y} pjs</b></td></tr>',
-        footerFormat: '</table>',
-        shared: true, useHTML: true
+        footerFormat: '</table>', shared: true, useHTML: true
       },
       plotOptions: { column: { pointPadding: 0.2, borderWidth: 0 } },
       series: <?php echo json_encode(getClasesPorRaza()); ?>
     });
 
-    // Usuarios por Level — Line/Area
+    // Nivel: desde lvl 13, pointStart dinámico desde PHP
+    var levelData     = <?php echo json_encode($levelObj['data']); ?>;
+    var levelMinStart = <?php echo intval($levelObj['minLevel']); ?>;
     Highcharts.chart('chartUsuariosPorLevel', {
       chart: { type: 'areaspline' },
       title: { text: 'Usuarios por Nivel' },
-      subtitle: { text: 'Cantidad de personajes por nivel' },
-      xAxis: { title: { text: 'Nivel' } },
+      subtitle: { text: 'Personajes desde nivel ' + levelMinStart + ' en adelante' },
+      xAxis: { title: { text: 'Nivel' }, allowDecimals: false },
       yAxis: { title: { text: 'Cantidad de usuarios' } },
+      tooltip: {
+        formatter: function() { return 'Nivel <b>' + this.x + '</b>: ' + this.y + ' personajes'; }
+      },
       plotOptions: {
         areaspline: {
-          pointStart: 1,
+          pointStart: levelMinStart,
           fillColor: { linearGradient: { x1:0, y1:0, x2:0, y2:1 }, stops: [[0,'rgba(201,149,42,0.3)'],[1,'rgba(201,149,42,0.01)']] },
-          marker: { enabled: false },
-          lineWidth: 2
+          marker: { enabled: false }, lineWidth: 2
         }
       },
-      series: [{ name: 'Usuarios', data: <?php echo json_encode(getUsuariosPorLevel()); ?> }]
+      series: [{ name: 'Personajes', data: levelData }]
     });
 
     // Kills por Clase — Bar
     var killsData = <?php echo json_encode(getKillsPorClase()); ?>;
     Highcharts.chart('chartUsuariosMatadosPorClase', {
       chart: { type: 'bar' },
-      title: { text: 'Promedio de Kills por Clase' },
+      title: { text: 'Kills Promedio por Clase' },
       subtitle: { text: 'Todos los personajes del servidor' },
       xAxis: { categories: killsData.map(function(x){ return x.name; }), title: { text: 'Clase' } },
-      yAxis: { min: 0, title: { text: 'Promedio de usuarios matados', align: 'high' }, labels: { overflow: 'justify' } },
+      yAxis: { min: 0, title: { text: 'Promedio de kills', align: 'high' }, labels: { overflow: 'justify' } },
+      tooltip: { valueSuffix: ' kills' },
       plotOptions: { bar: { dataLabels: { enabled: true, style: { color: '#D4C5A0', textOutline: 'none' } } } },
       series: [{ name: 'Kills promedio', data: killsData.map(function(x){ return x.y; }) }]
     });
-
   };
   </script>
 </body>

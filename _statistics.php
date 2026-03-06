@@ -1,10 +1,6 @@
 <?php
 include('environment.php');
 
-/**
- * Ejecuta una consulta que retorna una sola fila.
- * Devuelve null si no hay resultados o hay error de conexión.
- */
 function executeGetQuery($query) {
     global $databaseHost, $databaseUserRead, $databasePasswordRead, $databaseName, $databasePort;
     $conn = mysqli_connect($databaseHost, $databaseUserRead, $databasePasswordRead, $databaseName, $databasePort);
@@ -16,10 +12,6 @@ function executeGetQuery($query) {
     return $row;
 }
 
-/**
- * Ejecuta una consulta que retorna múltiples filas.
- * Devuelve array vacío si hay error.
- */
 function executeGetMultipleRowsQuery($query) {
     global $databaseHost, $databaseUserRead, $databasePasswordRead, $databaseName, $databasePort;
     $conn = mysqli_connect($databaseHost, $databaseUserRead, $databasePasswordRead, $databaseName, $databasePort);
@@ -49,7 +41,7 @@ function getClase($classId) {
 }
 
 function getGeneralStats() {
-    $users = executeGetQuery("SELECT COUNT(1) as count FROM user WHERE deleted = 0 AND guild_index <> 1");
+    $users    = executeGetQuery("SELECT COUNT(1) as count FROM user WHERE deleted = 0 AND guild_index <> 1");
     $accounts = executeGetQuery("SELECT COUNT(1) as count FROM account");
     return [
         'accounts' => $accounts['count'] ?? 0,
@@ -76,7 +68,7 @@ function getClasesPorRaza() {
          WHERE deleted = false AND guild_index <> 1
          GROUP BY race_id, class_id ORDER BY race_id, class_id"
     );
-    $validClassIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 12];
+    $validClassIds  = [1, 2, 3, 4, 5, 6, 7, 8, 9, 12];
     $classIdToIndex = array_flip($validClassIds);
     $result = [];
     for ($i = 1; $i <= 6; $i++) {
@@ -92,24 +84,30 @@ function getClasesPorRaza() {
     return array_values($result);
 }
 
+/**
+ * Retorna niveles desde MIN_LEVEL en adelante.
+ * Devuelve ['data' => [...], 'minLevel' => 13]
+ * para que el gráfico sepa dónde empieza el eje X.
+ */
 function getUsuariosPorLevel() {
+    $minLevel = 13;
     $rows = executeGetMultipleRowsQuery(
         "SELECT level, COUNT(id) as count FROM user
-         WHERE deleted = false AND level >= 1
+         WHERE deleted = false AND level >= $minLevel
          GROUP BY level ORDER BY level ASC"
     );
     $levelToCount = [];
-    $maxLevel = 1;
+    $maxLevel = $minLevel;
     foreach ($rows as $entry) {
         $level = intval($entry['level']);
         $levelToCount[$level] = intval($entry['count']);
         if ($level > $maxLevel) $maxLevel = $level;
     }
     $result = [];
-    for ($level = 1; $level <= $maxLevel; $level++) {
+    for ($level = $minLevel; $level <= $maxLevel; $level++) {
         $result[] = $levelToCount[$level] ?? 0;
     }
-    return $result;
+    return ['data' => $result, 'minLevel' => $minLevel];
 }
 
 function getKillsPorClase() {

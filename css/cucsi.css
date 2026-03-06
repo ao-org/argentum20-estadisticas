@@ -217,3 +217,91 @@ body {
 .navbar-nav .nav-item + .nav-item { margin-left: 1rem; }
 .badge-status { margin-left: 10px; height: 10px; border-radius: 100%; }
 .nav-item.warning { background-color: #F39C12; border-color: #e08e0b; border-radius: 0.25rem; }
+
+/* ── ITEM SEARCH ─────────────────────────────────────────────────────────── */
+.item-search-bar {
+  position: relative;
+  max-width: 480px;
+  margin-bottom: 10px;
+}
+
+.item-search-bar input {
+  width: 100%;
+  background: #0d0d14;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-bright);
+  font-family: 'Crimson Text', Georgia, serif;
+  font-size: 1rem;
+  padding: 10px 16px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.item-search-bar input::placeholder { color: var(--text-dim); }
+
+.item-search-bar input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,149,42,0.15);
+}
+
+.item-search-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  background: #13131c;
+  border: 1px solid var(--border-glow);
+  border-radius: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 999;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+}
+
+.item-search-option {
+  padding: 9px 16px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: var(--text);
+  border-bottom: 1px solid rgba(201,149,42,0.06);
+  transition: background 0.15s, color 0.15s;
+}
+
+.item-search-option:hover { background: rgba(201,149,42,0.1); color: var(--gold-light); }
+
+.item-search-option.selected {
+  background: rgba(201,149,42,0.12);
+  color: var(--gold-light);
+}
+.item-search-option.selected::after { content: ' ✓'; opacity: 0.7; }
+
+.item-search-empty { padding: 10px 16px; color: var(--text-dim); font-style: italic; font-size: 0.9rem; }
+
+/* TAGS */
+.item-tags { display: flex; flex-wrap: wrap; gap: 8px; min-height: 0; }
+
+.item-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(201,149,42,0.12);
+  border: 1px solid rgba(201,149,42,0.35);
+  border-radius: 20px;
+  padding: 4px 12px 4px 14px;
+  font-size: 0.85rem;
+  color: var(--gold-light);
+  animation: fadeInUp 0.2s ease both;
+}
+
+.item-tag-remove {
+  background: none;
+  border: none;
+  color: var(--gold-dim);
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0;
+  transition: color 0.15s;
+}
+.item-tag-remove:hover { color: var(--blood-light); }
