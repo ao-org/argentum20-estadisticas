@@ -1,7 +1,10 @@
 <?php
 include('_statistics.php');
-$stats    = getGeneralStats();
-$levelObj = getUsuariosPorLevel(); // ['data'=>[...], 'minLevel'=>13]
+$stats       = getGeneralStats();
+$levelObj    = getUsuariosPorLevel();
+$facciones   = getBalanceFacciones();
+$pesca       = getPuntosPesca();
+$clanes      = getDistribucionClanes();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -101,6 +104,76 @@ $levelObj = getUsuariosPorLevel(); // ['data'=>[...], 'minLevel'=>13]
       </div>
     </div>
 
+
+    <!-- Balance Real vs Caos -->
+    <div class="card">
+      <div class="card-header">Balance de Facciones — Real vs Caos</div>
+      <div class="card-body">
+        <?php if ($facciones['missing_column']): ?>
+          <div class="missing-col-notice">
+            ⚠️ Columna <code>faction_score</code> no encontrada en la tabla <code>user</code>.
+            Ejecutá la migración correspondiente para habilitar esta estadística.
+          </div>
+        <?php else: ?>
+        <div class="faction-summary">
+          <div class="faction-badge faction-real">
+            <div class="faction-icon">⚜️</div>
+            <div class="faction-count"><?php echo number_format($facciones['real_count']); ?></div>
+            <div class="faction-label">Ciudadanos Reales</div>
+            <div class="faction-avg">Score prom: <?php echo $facciones['real_avg']; ?></div>
+          </div>
+          <div class="faction-vs">VS</div>
+          <div class="faction-badge faction-caos">
+            <div class="faction-icon">💀</div>
+            <div class="faction-count"><?php echo number_format($facciones['caos_count']); ?></div>
+            <div class="faction-label">Criminales del Caos</div>
+            <div class="faction-avg">Score prom: <?php echo $facciones['caos_avg']; ?></div>
+          </div>
+        </div>
+        <figure class="highcharts-figure" style="height:260px; margin-top:20px">
+          <div id="chartFacciones"></div>
+        </figure>
+        <?php endif; ?>
+      </div>
+    </div>
+
+    <!-- Distribución de Clanes -->
+    <div class="charts-grid">
+      <div class="card">
+        <div class="card-header">Personajes en Clan</div>
+        <div class="card-body">
+          <div class="clan-pct-badge">
+            <span class="clan-pct-number"><?php echo $clanes['pct_clan']; ?>%</span>
+            <span class="clan-pct-label">de los personajes pertenecen a un clan</span>
+          </div>
+          <figure class="highcharts-figure" style="height:300px; margin-top:16px">
+            <div id="chartClanes"></div>
+          </figure>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Distribución de Puntos de Pesca</div>
+        <div class="card-body">
+          <?php if ($pesca['missing_column']): ?>
+            <div class="missing-col-notice">
+              ⚠️ Columna <code>puntos_pesca</code> no encontrada en la tabla <code>user</code>.
+              Ejecutá la migración correspondiente para habilitar esta estadística.
+            </div>
+          <?php else: ?>
+          <div class="pesca-summary">
+            <span>🎣 <strong><?php echo number_format($pesca['pescadores']); ?></strong> pescadores activos</span>
+            <span>🏆 Máximo: <strong><?php echo number_format($pesca['max_pesca']); ?></strong> pts</span>
+            <span>📊 Promedio: <strong><?php echo number_format($pesca['avg_pesca'], 1); ?></strong> pts</span>
+          </div>
+          <figure class="highcharts-figure" style="height:300px; margin-top:16px">
+            <div id="chartPesca"></div>
+          </figure>
+          <?php endif; ?>
+        </div>
+      </div>
+    </div>
+
     <!-- Steam -->
     <div class="steam-section">
       <div class="steam-section-header">Argentum Online en Steam</div>
@@ -171,47 +244,64 @@ $levelObj = getUsuariosPorLevel(); // ['data'=>[...], 'minLevel'=>13]
   });
 
   // ── Items chart con buscador ──────────────────────────────────────────────
-  var itemsChart = null;       // referencia al chart de Highcharts
-  var itemsIndex = {};         // id -> { name, points[] }  — catálogo completo
+  var itemsChart = null;
+  var itemsIndex = {}; // item_id (string) -> { name, label, points[] }
 
   $.ajax({
     url: "https://api.ao20.com.ar:2083/statistics/getItemsStatistics",
     success: function(data) {
-      // 1. Agrupar por item_id — clave única, evita colisiones por nombre duplicado
-      var nameCount = {};
+
+      // 1. Primera pasada: agrupar puntos por item_id en un mapa de timestamps
+      //    tsMap[id][ts] = cantidad acumulada — resuelve duplicados de timestamp sin
+      //    depender del orden de llegada de los registros.
+      var tsMap    = {}; // id -> { ts: qty }
+      var nameMap  = {}; // id -> nombre canónico
+      var nameCount = {}; // nombre -> cuántos IDs distintos lo usan
+
       data.forEach(function(item) {
-        var id = String(item.item_id);
-        if (!itemsIndex[id]) {
-          itemsIndex[id] = { name: item.NAME, points: [] };
-          nameCount[item.NAME] = (nameCount[item.NAME] || 0) + 1;
+        // Ignorar registros sin item_id válido o sin nombre (JOIN fallido en el servidor)
+        var rawId = item.item_id;
+        if (rawId === null || rawId === undefined) return;
+        var id  = String(rawId);
+        // Parsear fecha explícitamente para evitar ambigüedad UTC/local entre browsers
+        var raw = item.datetime ? item.datetime.replace(' ', 'T') : null;
+        var ts  = raw ? new Date(raw).getTime() : NaN;
+        if (isNaN(ts)) return; // ignorar registros con fecha inválida
+        var qty = Number(item.total_quantity) || 0;
+
+        // Guardar nombre solo si todavía no lo tenemos (o el actual es nulo)
+        if (!nameMap[id] && item.NAME) {
+          nameMap[id] = String(item.NAME);
         }
-        // Acumular cantidad por timestamp (suma si hay múltiples registros del mismo ts)
-        var ts  = new Date(item.datetime).getTime();
-        var qty = Number(item.total_quantity);
-        var pts = itemsIndex[id].points;
-        var last = pts.length ? pts[pts.length - 1] : null;
-        if (last && last.x === ts) {
-          last.y += qty; // mismo timestamp → sumar
-        } else {
-          pts.push({ x: ts, y: qty });
-        }
+
+        // Acumular en el mapa de timestamps
+        if (!tsMap[id]) tsMap[id] = {};
+        tsMap[id][ts] = (tsMap[id][ts] || 0) + qty;
       });
 
-      // 2. Resolver labels: si hay nombre duplicado entre IDs distintos, agregar (#id)
-      Object.keys(itemsIndex).forEach(function(id) {
-        var entry = itemsIndex[id];
-        if (nameCount[entry.name] > 1) entry.label = entry.name + ' (#' + id + ')';
-        else entry.label = entry.name;
-        // Ordenar puntos por fecha
-        entry.points.sort(function(a, b) { return a.x - b.x; });
+      // 2. Contar cuántos IDs comparten el mismo nombre (para desambiguar)
+      Object.keys(nameMap).forEach(function(id) {
+        var n = nameMap[id];
+        nameCount[n] = (nameCount[n] || 0) + 1;
       });
 
-      // 3. Dibujar gráfico vacío (ningún ítem visible por defecto)
+      // 3. Construir itemsIndex con puntos ordenados por fecha
+      Object.keys(tsMap).forEach(function(id) {
+        var rawName = nameMap[id] || 'Ítem #' + id; // fallback si NAME era null
+        var label   = (nameCount[rawName] > 1) ? rawName + ' (#' + id + ')' : rawName;
+        var points  = Object.keys(tsMap[id]).map(function(ts) {
+          return { x: Number(ts), y: tsMap[id][ts] };
+        });
+        points.sort(function(a, b) { return a.x - b.x; });
+        itemsIndex[id] = { name: rawName, label: label, points: points };
+      });
+
+      // 4. Dibujar gráfico vacío — ningún ítem visible por defecto
       itemsChart = Highcharts.chart('itemsQuantity', {
         title: { text: 'Ítems en Circulación' },
         subtitle: { text: 'Buscá y seleccioná ítems para graficarlos' },
         xAxis: { type: 'datetime', labels: { format: '{value:%d/%m/%y}', rotation: -45 } },
-        yAxis: { title: { text: 'Cantidad' } },
+        yAxis: { title: { text: 'Cantidad' }, min: 0 },
         tooltip: {
           xDateFormat: '%d/%m/%Y %H:%M',
           pointFormat: '<span style="color:{series.color}">●</span> {series.name}: <b>{point.y}</b><br/>'
@@ -220,7 +310,7 @@ $levelObj = getUsuariosPorLevel(); // ['data'=>[...], 'minLevel'=>13]
         series: []
       });
 
-      // 4. Inicializar buscador
+      // 5. Inicializar buscador
       initItemSearch();
     },
     error: function() {
@@ -293,19 +383,28 @@ $levelObj = getUsuariosPorLevel(); // ['data'=>[...], 'minLevel'=>13]
     if (selectedItemIds[id]) return;
     selectedItemIds[id] = true;
 
-    // Agregar serie al chart existente (sin redibujar todo)
+    // Agregar serie sin redibujar todavía
     itemsChart.addSeries({
       id:   'item-' + id,
       name: itemsIndex[id].label,
-      data: itemsIndex[id].points.slice() // copia para no mutar el original
-    }, true, false); // redraw=true, animation=false
+      // Convertir a array [x, y] — formato más robusto para eje datetime en HC8
+      data: itemsIndex[id].points.map(function(p) { return [p.x, p.y]; })
+    }, false, false); // redraw=false, animation=false
+
+    // Forzar recálculo de extremos del eje X y redibujar
+    itemsChart.xAxis[0].setExtremes(null, null, false);
+    itemsChart.redraw(false);
   }
 
   function removeItem(id) {
     if (!itemsChart) return;
     delete selectedItemIds[id];
     var serie = itemsChart.get('item-' + id);
-    if (serie) serie.remove(true, false);
+    if (serie) {
+      serie.remove(false, false);
+      itemsChart.xAxis[0].setExtremes(null, null, false);
+      itemsChart.redraw(false);
+    }
   }
 
   function renderTags() {
@@ -323,6 +422,98 @@ $levelObj = getUsuariosPorLevel(); // ['data'=>[...], 'minLevel'=>13]
       container.appendChild(tag);
     });
   }
+
+  // ── Balance de Facciones ─────────────────────────────────────────────────
+  <?php if (!$facciones['missing_column']): ?>
+  (function() {
+    var fData = <?php echo json_encode($facciones); ?>;
+    var total = fData.real_count + fData.caos_count + fData.neutral_count || 1;
+    Highcharts.chart('chartFacciones', {
+      chart: { type: 'bar', height: 220 },
+      title: { text: null },
+      xAxis: { categories: ['Personajes'], visible: false },
+      yAxis: { visible: false, min: 0, max: total },
+      plotOptions: {
+        bar: {
+          stacking: 'normal',
+          dataLabels: {
+            enabled: true,
+            formatter: function() {
+              var pct = (this.y / total * 100).toFixed(1);
+              return this.series.name + ': ' + this.y + ' (' + pct + '%)';
+            },
+            style: { color: '#D4C5A0', textOutline: 'none', fontSize: '12px' }
+          },
+          borderWidth: 0
+        }
+      },
+      legend: { enabled: true },
+      tooltip: {
+        formatter: function() {
+          return '<b>' + this.series.name + '</b><br/>Personajes: ' + this.y +
+                 '<br/>Porcentaje: ' + (this.y / total * 100).toFixed(1) + '%';
+        }
+      },
+      series: [
+        { name: 'Real',    data: [fData.real_count],    color: '#C9952A' },
+        { name: 'Caos',    data: [fData.caos_count],    color: '#8B1A1A' },
+        { name: 'Neutral', data: [fData.neutral_count], color: '#4a4a6a' }
+      ]
+    });
+  })();
+  <?php endif; ?>
+
+  // ── Distribución de Clanes ────────────────────────────────────────────────
+  (function() {
+    var cData = <?php echo json_encode($clanes['pie']); ?>;
+    Highcharts.chart('chartClanes', {
+      chart: { type: 'pie', height: 300 },
+      title: { text: null },
+      tooltip: {
+        pointFormat: '<b>{point.name}</b>: {point.y} personajes ({point.percentage:.1f}%)'
+      },
+      plotOptions: {
+        pie: {
+          allowPointSelect: true,
+          cursor: 'pointer',
+          dataLabels: {
+            enabled: true,
+            format: '<b>{point.name}</b><br/>{point.y} ({point.percentage:.1f}%)',
+            style: { color: '#D4C5A0', textOutline: 'none', fontSize: '11px' }
+          }
+        }
+      },
+      series: [{ name: 'Personajes', colorByPoint: false, data: cData }]
+    });
+  })();
+
+  // ── Puntos de Pesca ───────────────────────────────────────────────────────
+  <?php if (!$pesca['missing_column']): ?>
+  (function() {
+    var pescaData = <?php echo json_encode($pesca['dist']); ?>;
+    Highcharts.chart('chartPesca', {
+      chart: { type: 'column', height: 300 },
+      title: { text: null },
+      xAxis: {
+        categories: pescaData.map(function(d){ return d.name; }),
+        title: { text: 'Rango de puntos' }
+      },
+      yAxis: { title: { text: 'Personajes' }, min: 0, allowDecimals: false },
+      tooltip: {
+        formatter: function() {
+          return 'Rango <b>' + this.x + '</b><br/>' + this.y + ' personajes';
+        }
+      },
+      plotOptions: {
+        column: {
+          colorByPoint: true,
+          dataLabels: { enabled: true, style: { color: '#D4C5A0', textOutline: 'none', fontSize: '11px' } }
+        }
+      },
+      series: [{ name: 'Personajes', data: pescaData.map(function(d){ return d.y; }) }]
+    });
+  })();
+  <?php endif; ?>
 
   // ── PHP-data charts ───────────────────────────────────────────────────────
   window.onload = function() {

@@ -305,3 +305,101 @@ body {
   transition: color 0.15s;
 }
 .item-tag-remove:hover { color: var(--blood-light); }
+
+/* ── FACCIONES ───────────────────────────────────────────────────────────── */
+.faction-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding: 20px 0 8px;
+  flex-wrap: wrap;
+}
+
+.faction-badge {
+  text-align: center;
+  padding: 20px 32px;
+  border-radius: 6px;
+  border: 1px solid;
+  min-width: 180px;
+  transition: transform 0.2s;
+}
+.faction-badge:hover { transform: translateY(-3px); }
+
+.faction-real {
+  background: rgba(201,149,42,0.08);
+  border-color: rgba(201,149,42,0.4);
+}
+.faction-caos {
+  background: rgba(139,26,26,0.12);
+  border-color: rgba(139,26,26,0.5);
+}
+
+.faction-icon { font-size: 2rem; margin-bottom: 8px; }
+
+.faction-real  .faction-count { font-family: 'Cinzel', serif; font-size: 2.4rem; font-weight: 700; color: #F2C96A; line-height: 1; }
+.faction-caos  .faction-count { font-family: 'Cinzel', serif; font-size: 2.4rem; font-weight: 700; color: #C0392B; line-height: 1; }
+
+.faction-label { font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-dim); margin-top: 6px; }
+.faction-avg   { font-size: 0.8rem; color: var(--text-dim); margin-top: 4px; font-style: italic; }
+
+.faction-vs {
+  font-family: 'Cinzel', serif;
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--text-dim);
+  opacity: 0.5;
+}
+
+/* ── CLANES ──────────────────────────────────────────────────────────────── */
+.clan-pct-badge {
+  text-align: center;
+  padding: 14px 0 6px;
+}
+.clan-pct-number {
+  font-family: 'Cinzel', serif;
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--gold-light);
+  text-shadow: 0 0 30px rgba(201,149,42,0.3);
+  display: block;
+  line-height: 1;
+}
+.clan-pct-label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+  margin-top: 6px;
+}
+
+/* ── PESCA ───────────────────────────────────────────────────────────────── */
+.pesca-summary {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 10px 0 4px;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+.pesca-summary strong { color: var(--gold-light); }
+
+/* ── MISSING COLUMN NOTICE ───────────────────────────────────────────────── */
+.missing-col-notice {
+  background: rgba(139,26,26,0.12);
+  border: 1px solid rgba(139,26,26,0.35);
+  border-left: 3px solid #C0392B;
+  border-radius: 4px;
+  padding: 14px 18px;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.missing-col-notice code {
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  padding: 1px 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  color: #F2C96A;
+}
