@@ -185,6 +185,13 @@ $stats = getGeneralStats();
           });
         });
 
+          58,  // leña
+          2781, // leña élfica
+          192, // mineral de hierro
+          193, // mineral de plata
+          194, // mineral de oro
+          3391, // mineral de carbón
+          3787, // mineral de blodium
         let series = [];
 
         for (let itemName in chartData) {
