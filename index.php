@@ -104,6 +104,11 @@ $stats = getGeneralStats();
       <figure class="highcharts-figure">
         <div id="itemsQuantity"></div>
       </figure>
+      <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+        <input type="text" id="itemsSearch" class="form-control" placeholder="Buscar item..." style="max-width: 300px;" />
+        <button id="itemsSearchClear" class="btn btn-secondary btn-sm" style="display:none;">&#x2715; Limpiar</button>
+        <span id="itemsSearchCount" style="color: #aaa; font-size: 0.9em;"></span>
+      </div>
     </div>
   </div>
 
@@ -284,23 +289,89 @@ $stats = getGeneralStats();
           });
         }
 
-        var chart = Highcharts.chart('itemsQuantity', {
+        var itemsChart = Highcharts.chart('itemsQuantity', {
+          chart: {
+            height: 500,
+            zoomType: 'x'
+          },
           title: {
             text: 'Cantidad de items'
           },
           xAxis: {
             type: 'datetime',
             labels: {
-              format: '{value:%Y-%m-%d %H:%M}',
+              format: '{value:%d/%m/%y}',
               rotation: -45
             }
           },
           yAxis: {
             title: {
               text: 'Cantidad'
+            },
+            min: 0
+          },
+          tooltip: {
+            xDateFormat: '%d/%m/%Y %H:%M',
+            shared: false,
+            pointFormat: '<span style="color:{series.color}">\u25CF</span> {series.name}: <b>{point.y}</b><br/>'
+          },
+          legend: {
+            enabled: true,
+            maxHeight: 100,
+            navigation: {
+              enabled: true
+            }
+          },
+          plotOptions: {
+            series: {
+              marker: {
+                enabled: false
+              }
             }
           },
           series: series
+        });
+
+        // Guardar estado original de visibilidad
+        var originalVisibility = {};
+        itemsChart.series.forEach(function(s) {
+          originalVisibility[s.name] = s.visible;
+        });
+
+        // Buscador
+        var $search = $('#itemsSearch');
+        var $clear = $('#itemsSearchClear');
+        var $count = $('#itemsSearchCount');
+
+        function applyItemsFilter(query) {
+          var q = query.trim().toLowerCase();
+          var matched = 0;
+          var total = itemsChart.series.length;
+
+          itemsChart.series.forEach(function(s) {
+            var visible = q === '' ? originalVisibility[s.name] : s.name.toLowerCase().indexOf(q) !== -1;
+            s.setVisible(visible, false);
+            if (visible) matched++;
+          });
+
+          itemsChart.redraw();
+
+          if (q === '') {
+            $count.text('');
+            $clear.hide();
+          } else {
+            $count.text(matched + ' de ' + total + ' items');
+            $clear.show();
+          }
+        }
+
+        $search.on('input', function() {
+          applyItemsFilter($(this).val());
+        });
+
+        $clear.on('click', function() {
+          $search.val('');
+          applyItemsFilter('');
         });
       }
     });
