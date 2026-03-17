@@ -104,11 +104,6 @@ $stats = getGeneralStats();
       <figure class="highcharts-figure">
         <div id="itemsQuantity"></div>
       </figure>
-      <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
-        <input type="text" id="itemsSearch" class="form-control" placeholder="Buscar item..." style="max-width: 300px;" />
-        <button id="itemsSearchClear" class="btn btn-secondary btn-sm" style="display:none;">&#x2715; Limpiar</button>
-        <span id="itemsSearchCount" style="color: #aaa; font-size: 0.9em;"></span>
-      </div>
     </div>
   </div>
 
@@ -289,90 +284,26 @@ $stats = getGeneralStats();
           });
         }
 
-        var itemsChart = Highcharts.chart('itemsQuantity', {
-          chart: {
-            height: 600,
-            zoomType: 'x'
-          },
+        var chart = Highcharts.chart('itemsQuantity', {
           title: {
             text: 'Cantidad de items'
           },
           xAxis: {
             type: 'datetime',
             labels: {
-              format: '{value:%d/%m/%Y}',
+              format: '{value:%Y-%m-%d %H:%M}',
               rotation: -45
             }
           },
           yAxis: {
             title: {
               text: 'Cantidad'
-            },
-            min: 0
-          },
-          tooltip: {
-            xDateFormat: '%d/%m/%Y %H:%M',
-            shared: false,
-            pointFormat: '<span style="color:{series.color}">\u25CF</span> {series.name}: <b>{point.y}</b><br/>'
-          },
-          legend: {
-            enabled: true,
-            maxHeight: 120,
-            navigation: {
-              enabled: true
-            }
-          },
-          plotOptions: {
-            series: {
-              marker: {
-                enabled: false
-              }
             }
           },
           series: series
         });
-
-        // Buscador de items
-        var $search = $('#itemsSearch');
-        var $clear = $('#itemsSearchClear');
-        var $count = $('#itemsSearchCount');
-
-        // Guardar el estado original de visibilidad de cada serie
-        var originalVisibility = {};
-        itemsChart.series.forEach(function(s) {
-          originalVisibility[s.name] = s.visible;
-        });
-
-        function applyItemsFilter(query) {
-          var q = query.trim().toLowerCase();
-          var matched = 0;
-          var total = itemsChart.series.length;
-
-          itemsChart.series.forEach(function(s) {
-            var visible = q === '' ? originalVisibility[s.name] : s.name.toLowerCase().includes(q);
-            s.setVisible(visible, false);
-            if (visible) matched++;
-          });
-
-          itemsChart.redraw();
-
-          if (q === '') {
-            $count.text('');
-            $clear.hide();
-          } else {
-            $count.text(matched + ' de ' + total + ' items');
-            $clear.show();
-          }
-        }
-
-        $search.on('input', function() {
-          applyItemsFilter($(this).val());
-        });
-
-        $clear.on('click', function() {
-          $search.val('');
-          applyItemsFilter('');
-        });
+      }
+    });
 
     window.onload = () => {
       Highcharts.chart('chartUsuariosPorClase', {
