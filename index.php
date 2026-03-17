@@ -105,7 +105,7 @@ $stats = getGeneralStats();
         <div id="itemsQuantity"></div>
       </figure>
       <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
-        <input type="text" id="itemsSearch" class="form-control" placeholder="Buscar item (ej: leña, mineral, espada...)" style="max-width: 350px;" />
+        <input type="text" id="itemsSearch" class="form-control" placeholder="Buscar items (ej: leña barca mineral)" style="max-width: 350px;" />
         <button id="itemsSearchClear" class="btn btn-secondary btn-sm" style="display:none;">&#x2715; Limpiar</button>
         <span id="itemsSearchCount" style="color: #aaa; font-size: 0.9em;"></span>
       </div>
@@ -248,15 +248,16 @@ $stats = getGeneralStats();
         }
 
         function applyItemsFilter(query) {
-          var q = normalizeStr(query.trim());
-          if (q === currentQuery) return;
-          currentQuery = q;
+          var terms = normalizeStr(query.trim()).split(/\s+/).filter(function(t) { return t.length >= 2; });
+          var termKey = terms.join('|');
+          if (termKey === currentQuery) return;
+          currentQuery = termKey;
 
           while (itemsChart.series.length > 0) {
             itemsChart.series[0].remove(false);
           }
 
-          if (q.length < 2) {
+          if (terms.length === 0) {
             itemsChart.redraw();
             $count.text('Escribí al menos 2 caracteres para buscar');
             $clear.hide();
@@ -264,7 +265,8 @@ $stats = getGeneralStats();
           }
 
           var matched = allItemNames.filter(function(name) {
-            return normalizeStr(name).indexOf(q) !== -1;
+            var n = normalizeStr(name);
+            return terms.some(function(t) { return n.indexOf(t) !== -1; });
           });
 
           matched.forEach(function(name) {
@@ -401,7 +403,7 @@ $stats = getGeneralStats();
             label: {
               connectorAllowed: false
             },
-            pointStart: 1
+            pointStart: 13
           }
         },
 

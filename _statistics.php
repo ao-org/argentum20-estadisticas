@@ -210,7 +210,7 @@ function getUsuariosPorLevel()
         SELECT level, COUNT(id) as count
         FROM user
         WHERE deleted = false
-            AND level >= 1
+            AND level >= 13
         GROUP BY level
         ORDER BY level ASC;
 SQL;
