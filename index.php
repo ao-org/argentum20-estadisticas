@@ -105,7 +105,7 @@ $stats = getGeneralStats();
         <div id="itemsQuantity"></div>
       </figure>
       <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
-        <input type="text" id="itemsSearch" class="form-control" placeholder="Buscar item..." style="max-width: 300px;" />
+        <input type="text" id="itemsSearch" class="form-control" placeholder="Buscar item (ej: leña, mineral, espada...)" style="max-width: 350px;" />
         <button id="itemsSearchClear" class="btn btn-secondary btn-sm" style="display:none;">&#x2715; Limpiar</button>
         <span id="itemsSearchCount" style="color: #aaa; font-size: 0.9em;"></span>
       </div>
@@ -171,208 +171,118 @@ $stats = getGeneralStats();
     $.ajax({
       url: "https://api.ao20.com.ar:2083/statistics/getItemsStatistics",
       success: function(data) {
+
+        var sample = data[0] || {};
+        var nameKey     = 'NAME'           in sample ? 'NAME'           : 'name';
+        var quantityKey = 'total_quantity' in sample ? 'total_quantity' : 'quantity';
+        var datetimeKey = 'datetime'       in sample ? 'datetime'       : 'date';
+
+        // Agrupar datos por nombre de item
         let chartData = {};
-        let itemIds = {};
-
-        // Store item IDs along with names
         data.forEach((item) => {
-          if (!chartData[item.NAME]) {
-            chartData[item.NAME] = [];
-            itemIds[item.NAME] = item.item_id;
-          }
-
-          chartData[item.NAME].push({
-            x: new Date(item.datetime).getTime(),
-            y: item.total_quantity
+          var name = item[nameKey];
+          if (!name) return;
+          if (!chartData[name]) chartData[name] = [];
+          chartData[name].push({
+            x: new Date(item[datetimeKey]).getTime(),
+            y: Number(item[quantityKey]) || 0
           });
         });
 
-        // Define default visible items by ID
-        const defaultVisibleIds = [
-          474, // barca
-          475, // galera
-          478, // galeón patreon
-          58,  // leña
-          2781, // leña élfica
-          192, // mineral de hierro
-          193, // mineral de plata
-          194, // mineral de oro
-          3391, // mineral de carbón
-          3787, // mineral de blodium
-          386, // lingote de hierro
-          387, // lingote de plata
-          388, // lingote de oro
-          124, // katana
-          126, // espada de plata
-          131, // espada zafiro
-          132, // casco de hierro completo
-          360, // armadura de cazador
-          366, // daga +3
-          367, // daga +4
-          398, // sable maestro
-          399, // cimitarra
-          402, // espada matadragones
-          495, // Armadura escarlata
-          496, // Armadura de la Luz
-          601, // casco de plata
-          1098, // placas de gala
-          1099, // armadura de placas
-          1246, // hacha de guerra dos filos
-          1702, // escudo del valle
-          1767, // casco del cazador
-          1825, // nudillo de mithril
-          1907, // cota del gran cazador
-          1911, // armadura pesada
-          1929, // armadura de las sombras
-          1941, // armadura de la cienaga
-          1987, // armadura de placas completa
-          2323, // anillo de disolución
-          2598, // guante de lucha
-          2801, // coraza compuesta
-          2804, // armadura caranthir
-          2920, // cota de minero experto
-          2933, // escudo de plata
-          3769, // relicario
-          3770, // relicario sagrado
-          40,  // flauta élfica
-          41,  // laúd élfico
-          469, // laúd mágico
-          540, // flauta mágica
-          3550, // flecha +1
-          551, // flecha +2
-          552, // flecha élfica
-          553, // flecha +3
-          1722, // rodela reforzada
-          1724, // escudo de roble
-          1788, // báculo engarzado
-          1797, // bastón nudoso
-          1869, // arco maestro
-          1870, // arco de roble
-          1876, // arco de cazador
-          3801, // carcaj
-          3802, // carcaj +2
-          3803, // carcaj +3
-          3806, // carcaj +1
-          3984, // cruz mágica
-          1758, // casco de oso
-          1769, // capucha reforzada
-          3990, // sombrero de mago superior
-          4933, // sombrero de hechicero
-          4934, // casco de tigre
-          4935, // capucha de élite
-          4936, // sombrero ideal
-          519, // túnica legendaria
-          530, // túnica de druida
-          2916, // atavío oscuro
-          36,  // poción de agilidad
-          37,  // poción de maná
-          38,  // poción de vida
-          39,  // pocion de fuerza
-          169, // pocion de energia
-          889, // agilidad alquimia
-          891, // vida alquimia
-          892, // fuerza alquimia
-          894, // mana alquimia
-          3894 // poción de veneno alquimia
-        ];
+        var allItemNames = Object.keys(chartData);
 
-        let series = [];
-
-        for (let itemName in chartData) {
-          const itemId = itemIds[itemName];
-          const isVisible = defaultVisibleIds.includes(itemId);
-          
-          series.push({
-            name: itemName,
-            data: chartData[itemName],
-            visible: isVisible
+        // Gráfico vacío — se agregan series dinámicamente al buscar
+        // Reducir datos: quedarse con el último punto de cada día por item
+        function downsampleDaily(points) {
+          var byDay = {};
+          points.forEach(function(p) {
+            var day = new Date(p.x);
+            var key = day.getFullYear() + '-' + day.getMonth() + '-' + day.getDate();
+            byDay[key] = p; // sobreescribe, queda el último del día
           });
+          return Object.values(byDay).sort(function(a, b) { return a.x - b.x; });
         }
 
         var itemsChart = Highcharts.chart('itemsQuantity', {
           chart: {
             height: 500,
-            zoomType: 'x'
+            zoomType: 'x',
+            animation: false
           },
-          title: {
-            text: 'Cantidad de items'
-          },
+          title: { text: 'Cantidad de items' },
           xAxis: {
             type: 'datetime',
-            labels: {
-              format: '{value:%d/%m/%y}',
-              rotation: -45
-            }
+            labels: { format: '{value:%d/%m/%y}', rotation: -45 }
           },
           yAxis: {
-            title: {
-              text: 'Cantidad'
-            },
+            title: { text: 'Cantidad' },
             min: 0
           },
           tooltip: {
             xDateFormat: '%d/%m/%Y %H:%M',
-            shared: false,
             pointFormat: '<span style="color:{series.color}">\u25CF</span> {series.name}: <b>{point.y}</b><br/>'
           },
           legend: {
             enabled: true,
-            maxHeight: 100,
-            navigation: {
-              enabled: true
-            }
+            maxHeight: 120,
+            navigation: { enabled: true }
           },
           plotOptions: {
-            series: {
-              marker: {
-                enabled: false
-              }
-            }
+            series: { marker: { enabled: false }, animation: false }
           },
-          series: series
-        });
-
-        // Guardar estado original de visibilidad
-        var originalVisibility = {};
-        itemsChart.series.forEach(function(s) {
-          originalVisibility[s.name] = s.visible;
+          series: []
         });
 
         // Buscador
         var $search = $('#itemsSearch');
-        var $clear = $('#itemsSearchClear');
-        var $count = $('#itemsSearchCount');
+        var $clear  = $('#itemsSearchClear');
+        var $count  = $('#itemsSearchCount');
+        var currentQuery = '';
+
+        function normalizeStr(str) {
+          return str.toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // quita acentos
+            .replace(/ñ/g, 'n')
+            .replace(/ü/g, 'u');
+        }
 
         function applyItemsFilter(query) {
-          var q = query.trim().toLowerCase();
-          var matched = 0;
-          var total = itemsChart.series.length;
+          var q = normalizeStr(query.trim());
+          if (q === currentQuery) return;
+          currentQuery = q;
 
-          itemsChart.series.forEach(function(s) {
-            var visible = q === '' ? originalVisibility[s.name] : s.name.toLowerCase().indexOf(q) !== -1;
-            s.setVisible(visible, false);
-            if (visible) matched++;
+          while (itemsChart.series.length > 0) {
+            itemsChart.series[0].remove(false);
+          }
+
+          if (q.length < 2) {
+            itemsChart.redraw();
+            $count.text('Escribí al menos 2 caracteres para buscar');
+            $clear.hide();
+            return;
+          }
+
+          var matched = allItemNames.filter(function(name) {
+            return normalizeStr(name).indexOf(q) !== -1;
+          });
+
+          matched.forEach(function(name) {
+            var pts = downsampleDaily(chartData[name]);
+            console.log('[items] Serie "' + name + '": ' + chartData[name].length + ' puntos originales → ' + pts.length + ' después de downsample');
+            itemsChart.addSeries({ name: name, data: pts }, false);
           });
 
           itemsChart.redraw();
-
-          if (q === '') {
-            $count.text('');
-            $clear.hide();
-          } else {
-            $count.text(matched + ' de ' + total + ' items');
-            $clear.show();
-          }
+          $count.text(matched.length + ' resultado' + (matched.length !== 1 ? 's' : '') + ' de ' + allItemNames.length + ' items');
+          $clear.show();
         }
 
-        $search.on('input', function() {
-          applyItemsFilter($(this).val());
-        });
-
-        $clear.on('click', function() {
-          $search.val('');
-          applyItemsFilter('');
-        });
+        $search.on('input', function() { applyItemsFilter($(this).val()); });
+        $clear.on('click', function() { $search.val(''); applyItemsFilter(''); });
+      },
+      error: function(xhr, status, err) {
+        console.error('[items] Error API:', status, err);
       }
     });
 
