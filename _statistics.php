@@ -211,6 +211,7 @@ function getUsuariosPorLevel()
         FROM user
         WHERE deleted = false
             AND level >= 13
+            AND level <= 47
         GROUP BY level
         ORDER BY level ASC;
 SQL;

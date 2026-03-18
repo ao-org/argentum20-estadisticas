@@ -390,7 +390,9 @@ $stats = getGeneralStats();
         xAxis: {
           title: {
             text: 'Nivel'
-          }
+          },
+          allowDecimals: false,
+          tickInterval: 1
         },
         legend: {
           layout: 'horizontal',
