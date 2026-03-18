@@ -212,6 +212,7 @@ function getUsuariosPorLevel()
         WHERE deleted = false
             AND level >= 13
             AND level <= 47
+            AND guild_index <> 1
         GROUP BY level
         ORDER BY level ASC;
 SQL;
@@ -231,8 +232,7 @@ SQL;
     }
 
     $result = array();
-    // Build a dense array starting at level 1 (index 0) to keep pointStart alignment
-    for ($level = 1; $level <= $maxLevel; $level++) {
+    for ($level = 13; $level <= $maxLevel; $level++) {
         $result[] = isset($levelToCount[$level]) ? $levelToCount[$level] : 0;
     }
 
