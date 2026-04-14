@@ -1,6 +1,11 @@
 <?php
 include('_statistics.php');
 $stats = getGeneralStats();
+$usuariosPorClase = getUsuariosPorClase();
+$clasesPorRaza = getClasesPorRaza();
+$usuariosPorLevel = getUsuariosPorLevel();
+$killsPorClase = getKillsPorClase();
+$usuariosOnlinePorHora = getUsuariosOnlinePorHora();
 ?>
 
 <!DOCTYPE html>
@@ -42,11 +47,11 @@ $stats = getGeneralStats();
         <tbody>
           <tr>
             <td>Cuentas creadas</td>
-            <td><?php echo $stats['accounts']; ?></td>
+            <td><?php echo !empty($stats['accounts']) ? $stats['accounts'] : '—'; ?></td>
           </tr>
           <tr>
             <td>Personajes creados</td>
-            <td><?php echo $stats['users']; ?></td>
+            <td><?php echo !empty($stats['users']) ? $stats['users'] : '—'; ?></td>
           </tr>
         </tbody>
       </table>
@@ -85,6 +90,15 @@ $stats = getGeneralStats();
     <div class="card-body">
       <figure class="highcharts-figure">
         <div id="chartUsuariosPorLevel"></div>
+      </figure>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">Usuarios online por hora</div>
+    <div class="card-body">
+      <figure class="highcharts-figure">
+        <div id="chartUsuariosOnlinePorHora"></div>
       </figure>
     </div>
   </div>
@@ -289,6 +303,13 @@ $stats = getGeneralStats();
     });
 
     window.onload = () => {
+      var usuariosPorClaseData = <?php echo json_encode($usuariosPorClase); ?>;
+      var clasesPorRazaData = <?php echo json_encode($clasesPorRaza); ?>;
+      var usuariosPorLevelData = <?php echo json_encode($usuariosPorLevel); ?>;
+      var killsPorClaseData = <?php echo json_encode($killsPorClase); ?>;
+      var onlinePorHoraData = <?php echo json_encode($usuariosOnlinePorHora); ?>;
+
+      if (usuariosPorClaseData.length > 0) {
       Highcharts.chart('chartUsuariosPorClase', {
         chart: {
           plotBackgroundColor: null,
@@ -323,10 +344,14 @@ $stats = getGeneralStats();
         series: [{
           name: 'Usuarios',
           colorByPoint: true,
-          data: <?php echo json_encode(getUsuariosPorClase()); ?>
+          data: usuariosPorClaseData
         }]
       });
+      } else {
+        document.getElementById('chartUsuariosPorClase').innerHTML = '<p class="text-muted">No se pudieron cargar las estadísticas.</p>';
+      }
 
+      if (clasesPorRazaData.length > 0) {
       Highcharts.chart('chartClasesPorRaza', {
         chart: {
           type: 'column'
@@ -372,9 +397,13 @@ $stats = getGeneralStats();
             borderWidth: 0
           }
         },
-        series: <?php echo json_encode(getClasesPorRaza()); ?>
+        series: clasesPorRazaData
       });
+      } else {
+        document.getElementById('chartClasesPorRaza').innerHTML = '<p class="text-muted">No se pudieron cargar las estadísticas.</p>';
+      }
 
+      if (usuariosPorLevelData.length > 0) {
       Highcharts.chart('chartUsuariosPorLevel', {
         title: {
           text: 'Usuarios por nivel'
@@ -405,13 +434,13 @@ $stats = getGeneralStats();
             label: {
               connectorAllowed: false
             },
-            pointStart: 13
+            pointStart: 1
           }
         },
 
         series: [{
           name: 'Cantidad de usuarios',
-          data: <?php echo json_encode(getUsuariosPorLevel()); ?>
+          data: usuariosPorLevelData
         }, ],
 
         responsive: {
@@ -429,9 +458,31 @@ $stats = getGeneralStats();
           }]
         }
       });
+      } else {
+        document.getElementById('chartUsuariosPorLevel').innerHTML = '<p class="text-muted">No se pudieron cargar las estadísticas.</p>';
+      }
 
-      const chartData = <?php echo json_encode(getKillsPorClase()); ?>;
+      // Online users by hour chart
+      if (onlinePorHoraData.length > 0) {
+        var horaCategories = [];
+        for (var h = 0; h < 24; h++) {
+          horaCategories.push((h < 10 ? '0' : '') + h + ':00');
+        }
+        Highcharts.chart('chartUsuariosOnlinePorHora', {
+          chart: { type: 'column' },
+          title: { text: 'Usuarios online por hora' },
+          subtitle: { text: 'Promedio de usuarios conectados por hora del día' },
+          xAxis: { categories: horaCategories, crosshair: true },
+          yAxis: { min: 0, title: { text: 'Promedio de usuarios' } },
+          tooltip: { pointFormat: '{series.name}: <b>{point.y:.1f}</b>' },
+          plotOptions: { column: { pointPadding: 0.2, borderWidth: 0 } },
+          series: [{ name: 'Usuarios online', data: onlinePorHoraData }]
+        });
+      } else {
+        document.getElementById('chartUsuariosOnlinePorHora').innerHTML = '<p class="text-muted">No se pudieron cargar las estadísticas.</p>';
+      }
 
+      if (killsPorClaseData.length > 0) {
       Highcharts.chart('chartUsuariosMatadosPorClase', {
         chart: {
           type: 'bar'
@@ -443,7 +494,7 @@ $stats = getGeneralStats();
           text: 'todos los personajes del servidor'
         },
         xAxis: {
-          categories: chartData.map(x => x.name),
+          categories: killsPorClaseData.map(x => x.name),
           title: {
             text: 'Clase'
           }
@@ -484,9 +535,12 @@ $stats = getGeneralStats();
         },
         series: [{
           name: 'Usuarios Matados',
-          data: chartData.map(x => x.y)
+          data: killsPorClaseData.map(x => x.y)
         }]
       });
+      } else {
+        document.getElementById('chartUsuariosMatadosPorClase').innerHTML = '<p class="text-muted">No se pudieron cargar las estadísticas.</p>';
+      }
     };
   </script>
 </body>

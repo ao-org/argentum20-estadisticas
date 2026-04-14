@@ -1,106 +1,114 @@
 <?php
 include('environment.php');
 
-function executeGetQuery($query) {
+/**
+ * Returns a shared mysqli connection (lazy singleton).
+ * Creates the connection on first call, caches it in a static variable.
+ * Pass $reset = true to clear the cached connection (used by closeConnection).
+ * Returns null on failure, logging the error server-side.
+ */
+function getConnection(bool $reset = false): ?mysqli {
+    static $conn = null;
+
+    if ($reset) {
+        $conn = null;
+        return null;
+    }
+
+    if ($conn !== null) {
+        return $conn;
+    }
+
     global $databaseHost, $databaseUserRead, $databasePasswordRead, $databaseName, $databasePort;
-    $conn = mysqli_connect($databaseHost, $databaseUserRead, $databasePasswordRead, $databaseName, $databasePort);
-    
+
+    $conn = @mysqli_connect($databaseHost, $databaseUserRead, $databasePasswordRead, $databaseName, $databasePort);
+
+    if (!$conn) {
+        error_log('[AO20 Stats] Connection failed: ' . mysqli_connect_error() . ' (errno: ' . mysqli_connect_errno() . ')');
+        $conn = null;
+        return null;
+    }
+
     mysqli_set_charset($conn, 'utf8');
 
-    // die(print_r($query));
+    return $conn;
+}
+
+/**
+ * Closes the shared connection if open and resets the static variable.
+ */
+function closeConnection(): void {
+    $conn = getConnection();
+    if ($conn !== null) {
+        mysqli_close($conn);
+    }
+    getConnection(true);
+}
+
+register_shutdown_function('closeConnection');
+
+function executeGetQuery($query) {
+    $conn = getConnection();
+    if ($conn === null) {
+        return [];
+    }
+
     $result = mysqli_query($conn, $query);
-    $result = mysqli_fetch_assoc($result);
+    if (!$result) {
+        error_log('[AO20 Stats] Query failed: ' . mysqli_error($conn) . ' — Query: ' . $query);
+        return [];
+    }
 
-    mysqli_close($conn);
-
-    return $result;
+    $row = mysqli_fetch_assoc($result);
+    return $row ?: [];
 }
 
 
 function executeGetMultipleRowsQuery($query) {
-    global $databaseHost, $databaseUserRead, $databasePasswordRead, $databaseName, $databasePort;
-    $conn =  mysqli_connect($databaseHost, $databaseUserRead, $databasePasswordRead, $databaseName, $databasePort);
-    mysqli_set_charset($conn, 'utf8');
-
-    $result = mysqli_query($conn, $query);
-
-    mysqli_close($conn);
-
-    return $result;
-}
-
-function getRaza($raceId) {
-    $raceId = intval($raceId);
-    $raza = '';
-
-    switch($raceId) {
-        case 1:
-            $raza = 'Humano';
-            break;
-        case 2:
-            $raza = 'Elfo';
-            break;
-        case 3:
-            $raza = 'Elfo Oscuro';
-            break;
-        case 4:
-            $raza = 'Gnomo';
-            break;
-        case 5:
-            $raza = 'Enano';
-            break;
-        case 6:
-            $raza = 'Orco';
-            break;
-        default:
-            $raza = 'Otra';
-            break;
+    $conn = getConnection();
+    if ($conn === null) {
+        return [];
     }
 
-    return $raza;
+    $result = mysqli_query($conn, $query);
+    if (!$result) {
+        error_log('[AO20 Stats] Query failed: ' . mysqli_error($conn) . ' — Query: ' . $query);
+        return [];
+    }
+
+    return mysqli_fetch_all($result, MYSQLI_ASSOC);
+}
+
+$RACE_NAMES = [
+    1 => 'Humano',
+    2 => 'Elfo',
+    3 => 'Elfo Oscuro',
+    4 => 'Gnomo',
+    5 => 'Enano',
+    6 => 'Orco',
+];
+
+$CLASS_NAMES = [
+    1  => 'Mago',
+    2  => 'Clérigo',
+    3  => 'Guerrero',
+    4  => 'Asesino',
+    5  => 'Bardo',
+    6  => 'Druida',
+    7  => 'Paladin',
+    8  => 'Cazador',
+    9  => 'Trabajador',
+    12 => 'Bandido',
+];
+
+function getRaza($raceId) {
+    global $RACE_NAMES;
+    return $RACE_NAMES[intval($raceId)] ?? 'Otra';
 }
 
 function getClase($classId) {
-    $classId = intval($classId);
-    $clase = '';
-
-    switch($classId) {
-        case 1:
-            $clase = 'Mago';
-            break;
-        case 2:
-            $clase = 'Clérigo';
-            break;
-        case 3:
-            $clase = 'Guerrero';
-            break;
-        case 4:
-            $clase = 'Asesino';
-            break;
-        case 5:
-            $clase = 'Bardo';
-            break;
-        case 6:
-            $clase = 'Druida';
-            break;
-        case 7:
-            $clase = 'Paladin';
-            break;
-        case 8:
-            $clase = 'Cazador';
-            break;
-        case 9:
-            $clase = 'Trabajador';
-            break;
-        case 12:
-            $clase = 'Bandido';
-            break;
-        default:
-            $clase = 'Otra';
-            break;
-    }
-
-    return $clase;
+    global $CLASS_NAMES;
+    return $CLASS_NAMES[intval($classId)] ?? 'Otra';
 }
 
 function getGeneralStats()
@@ -108,8 +116,9 @@ function getGeneralStats()
     $query = <<<SQL
         SELECT COUNT(1) as count
         FROM user
-        WHERE deleted = 0
-            AND guild_index <> 1;
+        WHERE deleted <> 1
+            AND guild_index <> 1
+            AND (is_banned IS NULL OR is_banned <> 1);
 SQL;
 
 
@@ -117,20 +126,14 @@ SQL;
 
     $query = <<<SQL
         SELECT COUNT(1) as count
-        FROM account;
+        FROM account
+        WHERE (is_banned IS NULL OR is_banned <> 1);
 SQL;
     $accounts = executeGetQuery($query);
-
-//     $query = <<<SQL
-//         SELECT clanes_creados
-//         FROM stats;
-// SQL;
-//     $clanes = executeGetQuery($query);
 
     return array(
         'accounts' => $accounts['count'],
         'users' => $users['count'],
-        // 'clanes' => $clanes['clanes_creados']
     );
 }
 
@@ -139,7 +142,7 @@ function getUsuariosPorClase()
     $query = <<<SQL
         SELECT class_id, COUNT(id) as count
         FROM user
-        WHERE deleted = false
+        WHERE deleted <> 1
             AND guild_index <> 1
         GROUP BY class_id
         ORDER BY class_id;
@@ -164,7 +167,7 @@ function getClasesPorRaza()
     $query = <<<SQL
         SELECT race_id, class_id, COUNT(id) as count
         FROM user
-        WHERE deleted = false
+        WHERE deleted <> 1
             AND guild_index <> 1
         GROUP BY race_id, class_id
         ORDER BY race_id, class_id;
@@ -191,12 +194,23 @@ SQL;
     }
 
     foreach ($clasesPorRaza as $entry) {
+        $raceId = intval($entry['race_id']);
         $classId = intval($entry['class_id']);
         if (isset($classIdToIndex[$classId])) {
             $idx = $classIdToIndex[$classId];
-            $result[$entry['race_id']]['data'][$idx] = intval($entry['count']);
+            if (isset($result[$raceId])) {
+                $result[$raceId]['data'][$idx] = intval($entry['count']);
+            } else {
+                // Unknown race — aggregate into "Otra"
+                if (!isset($result['otra'])) {
+                    $result['otra'] = array(
+                        'name' => 'Otra',
+                        'data' => array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+                    );
+                }
+                $result['otra']['data'][$idx] += intval($entry['count']);
+            }
         }
-        // Ignorar clases no válidas (10, 11, etc.)
     }
 
     $result = array_values($result);
@@ -209,9 +223,7 @@ function getUsuariosPorLevel()
     $query = <<<SQL
         SELECT level, COUNT(id) as count
         FROM user
-        WHERE deleted = false
-            AND level >= 13
-            AND level <= 47
+        WHERE deleted <> 1
             AND guild_index <> 1
         GROUP BY level
         ORDER BY level ASC;
@@ -232,7 +244,7 @@ SQL;
     }
 
     $result = array();
-    for ($level = 13; $level <= $maxLevel; $level++) {
+    for ($level = 1; $level <= $maxLevel; $level++) {
         $result[] = isset($levelToCount[$level]) ? $levelToCount[$level] : 0;
     }
 
@@ -244,7 +256,7 @@ function getKillsPorClase()
     $query = <<<SQL
         SELECT class_id, AVG(ciudadanos_matados + criminales_matados) as promedio_matados
         FROM user
-        WHERE deleted = FALSE
+        WHERE deleted <> 1
             AND guild_index <> 1
             AND class_id IN (1,2,3,4,5,6,7,8,9,12)
         GROUP BY class_id
@@ -259,7 +271,7 @@ SQL;
     foreach ($killsPorClase as $entry) {
         $result[] = array(
             'name' => getClase($entry['class_id']),
-            'y' => intval($entry['promedio_matados'])
+            'y' => round(floatval($entry['promedio_matados']), 1)
         );
     }
 
