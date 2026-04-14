@@ -70,16 +70,54 @@ for ($i = 1; $i <= $numChars; $i++) {
     $charName = $prefix . $suffix;
     
     // Create account
-    $username = "testuser" . $accountId;
     $email = "test$accountId@example.com";
+    $password = str_repeat('a', 64);
+    $salt = str_repeat('b', 32);
+    $validateCode = str_repeat('c', 32);
+    $dateCreated = date('Y-m-d H:i:s');
     
-    $stmt = $conn->prepare("INSERT INTO account (id, username, password, email) VALUES (?, ?, 'test_password', ?)");
-    $stmt->bind_param("iss", $accountId, $username, $email);
+    $stmt = $conn->prepare("INSERT INTO account (id, email, password, salt, date_created, validated, validate_code) VALUES (?, ?, ?, ?, ?, 1, ?)");
+    $stmt->bind_param("isssss", $accountId, $email, $password, $salt, $dateCreated, $validateCode);
     $stmt->execute();
     
     // Create character
-    $stmt = $conn->prepare("INSERT INTO user (id, account_id, name, class_id, race_id, level, ciudadanos_matados, criminales_matados, guild_index, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0)");
-    $stmt->bind_param("iisiiiii", $userId, $accountId, $charName, $classId, $raceId, $level, $ciudadanosMatados, $criminalesMatados);
+    $genreId = rand(1, 2);
+    $gold = rand(0, 5000);
+    $bankGold = rand(0, 10000);
+    $killedNpcs = rand(0, 200);
+    $deaths = rand(0, 30);
+    $exp = $level * $level * 50;
+    $minHp = 100 + $level * 8;
+    $maxHp = $minHp + rand(0, 50);
+    $fechaIngreso = date('Y-m-d H:i:s', strtotime("-" . rand(1, 365) . " days"));
+    
+    $stmt = $conn->prepare("INSERT INTO user (id, account_id, deleted, name, level, exp, genre_id, race_id, class_id,
+      home_id, gold, bank_gold, free_skillpoints, pets_saved, spouse,
+      pos_map, pos_x, pos_y, body_id, head_id, weapon_id, helmet_id, shield_id, heading,
+      min_hp, min_man, min_sta, min_ham, min_sed, killed_npcs, killed_users, invent_level,
+      is_naked, is_poisoned, is_incinerated, is_dead, is_sailing, is_paralyzed, is_silenced,
+      is_mounted, counter_pena, deaths,
+      ciudadanos_matados, criminales_matados, recibio_armadura_real, recibio_armadura_caos,
+      reenlistadas, fecha_ingreso, warnings, elo, return_map,
+      return_x, return_y, last_logout, is_logged, is_reset, max_hp,
+      jinete_level, backpack_id, guild_index) VALUES
+      (?, ?, 0, ?, ?, ?, ?, ?, ?,
+       1, ?, ?, 0, 0, 0,
+       1, 50, 50, 1, ?, 0, 0, 0, 1,
+       ?, 100, 100, 50, 50, ?, 0, 1,
+       0, 0, 0, 0, 0, 0, 0,
+       0, 0, ?,
+       ?, ?, 0, 0,
+       0, ?, 0, 1000, 1,
+       50, 50, 0, 0, 0, ?,
+       0, 0, 0)");
+    $headId = rand(1, 25);
+    $stmt->bind_param("iisiiiiiiiiiiiiiiiiisi",
+      $userId, $accountId, $charName, $level, $exp, $genreId, $raceId, $classId,
+      $gold, $bankGold, $headId,
+      $minHp, $killedNpcs, $deaths,
+      $ciudadanosMatados, $criminalesMatados,
+      $fechaIngreso, $maxHp);
     $stmt->execute();
     
     if ($i % 10 == 0) {

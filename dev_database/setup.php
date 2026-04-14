@@ -38,12 +38,16 @@ if ($conn->query($sql) === TRUE) {
 // Select the database
 $conn->select_db($databaseName);
 
-// Clean up any existing tables first
+// Clean up any existing tables/views first
 echo "Cleaning up existing tables...\n";
-$tables = ['statistics_users_online', 'user', 'account', 'character_classes', 'character_races'];
+$conn->query("DROP VIEW IF EXISTS `ranking_users`");
+$tables = ['guild_members', 'guilds', 'statistics_users_online', 'user', 'account'];
 foreach ($tables as $table) {
     $conn->query("DROP TABLE IF EXISTS `$table`");
 }
+// Also drop legacy tables from old schema
+$conn->query("DROP TABLE IF EXISTS `character_classes`");
+$conn->query("DROP TABLE IF EXISTS `character_races`");
 echo "Cleanup completed.\n\n";
 
 // Execute schema
