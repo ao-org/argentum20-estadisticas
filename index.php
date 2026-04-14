@@ -1,11 +1,6 @@
 <?php
 include('_statistics.php');
 $stats = getGeneralStats();
-$usuariosPorClase = getUsuariosPorClase();
-$clasesPorRaza = getClasesPorRaza();
-$usuariosPorLevel = getUsuariosPorLevel();
-$killsPorClase = getKillsPorClase();
-$usuariosOnlinePorHora = getUsuariosOnlinePorHora();
 ?>
 
 <!DOCTYPE html>
@@ -16,10 +11,8 @@ $usuariosOnlinePorHora = getUsuariosOnlinePorHora();
   <title>AO20 - Estadisticas</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="shortcut icon" href="/favicon.ico">
-  <!-- Bootstrap core CSS -->
-  <link href="./vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-
-  <link href="./vendor/bootstrap/css/bootswatch.min.css" rel="stylesheet">
+  <!-- Bootstrap 5 Bootswatch Darkly theme CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/darkly/bootstrap.min.css" rel="stylesheet" integrity="sha384-t2UKecXY6tDoQIsEiNhYTaTFWmoHgQT7MV80h9huTejPYLkdgaOHv8ssDrS3Cdcw" crossorigin="anonymous">
 
   <link href="./css/cucsi.css" rel="stylesheet">
   
@@ -61,63 +54,49 @@ $usuariosOnlinePorHora = getUsuariosOnlinePorHora();
   <div class="card mb-3">
     <div class="card-header">Usuarios por clase</div>
     <div class="card-body">
-      <figure class="highcharts-figure">
-        <div id="chartUsuariosPorClase"></div>
-      </figure>
+      <div class="chart-container"><canvas id="chartUsuariosPorClase"></canvas></div>
     </div>
   </div>
 
   <div class="card mb-3">
     <div class="card-header">Clases por raza</div>
     <div class="card-body">
-      <figure class="highcharts-figure">
-        <div id="chartClasesPorRaza"></div>
-      </figure>
+      <div class="chart-container"><canvas id="chartClasesPorRaza"></canvas></div>
     </div>
   </div>
 
   <div class="card mb-3">
     <div class="card-header">Usuarios matados por clase</div>
     <div class="card-body">
-      <figure class="highcharts-figure">
-        <div id="chartUsuariosMatadosPorClase"></div>
-      </figure>
+      <div class="chart-container"><canvas id="chartUsuariosMatadosPorClase"></canvas></div>
     </div>
   </div>
 
   <div class="card mb-3">
     <div class="card-header">Usuarios por nivel</div>
     <div class="card-body">
-      <figure class="highcharts-figure">
-        <div id="chartUsuariosPorLevel"></div>
-      </figure>
+      <div class="chart-container"><canvas id="chartUsuariosPorLevel"></canvas></div>
     </div>
   </div>
 
   <div class="card mb-3">
     <div class="card-header">Usuarios online por hora</div>
     <div class="card-body">
-      <figure class="highcharts-figure">
-        <div id="chartUsuariosOnlinePorHora"></div>
-      </figure>
+      <div class="chart-container"><canvas id="chartUsuariosOnlinePorHora"></canvas></div>
     </div>
   </div>
 
   <div class="card mb-3">
     <div class="card-header">Inflacion de Oro</div>
     <div class="card-body">
-      <figure class="highcharts-figure">
-        <div id="goldInflation"></div>
-      </figure>
+      <div class="chart-container"><canvas id="goldInflation"></canvas></div>
     </div>
   </div>
 
   <div class="card mb-3">
     <div class="card-header">Cantidad de items</div>
     <div class="card-body">
-      <figure class="highcharts-figure">
-        <div id="itemsQuantity"></div>
-      </figure>
+      <div class="chart-container"><canvas id="itemsQuantity"></canvas></div>
       <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
         <input type="text" id="itemsSearch" class="form-control" placeholder="Buscar items (ej: leña barca mineral)" style="max-width: 350px;" />
         <button id="itemsSearchClear" class="btn btn-secondary btn-sm" style="display:none;">&#x2715; Limpiar</button>
@@ -128,421 +107,16 @@ $usuariosOnlinePorHora = getUsuariosOnlinePorHora();
 
   <iframe src="https://steamdb.info/embed/?appid=1956740" height="389" style="border:0;overflow:hidden;width:100%" loading="lazy"></iframe>
 
-  <!-- Bootstrap core JavaScript -->
-  <script src="./vendor/jquery/jquery.min.js"></script>
-  <script src="./vendor/popper/popper.min.js"></script>
-  <script src="./vendor/bootstrap/js/bootstrap.min.js"></script>
-  <script src="./vendor/Highcharts-8.0.4/code/highcharts.js"></script>
-  <script src="./vendor/Highcharts-8.0.4/code/themes/dark-unica.js"></script>
-
-  <script type="text/javascript">
-    $.ajax({
-      url: "https://api.ao20.com.ar:2083/statistics/getGoldStatistics",
-      success: function(data) {
-        var datetime = data.map(a => {
-          var date = new Date(a.datetime);
-          return (date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getFullYear() + ' ' + date.getHours() + ':' + date.getMinutes();
-        });
-
-        var gold_total = data.map(a => a.gold_total);
-        var gold_inventory = data.map(a => a.gold_inventory);
-        var gold_bank = data.map(a => a.gold_bank);
-        var gold_inventory_as_item = data.map(a => a.gold_inventory_as_item);
-        var gold_bank_as_item = data.map(a => a.gold_bank_as_item);
-
-        var chart = Highcharts.chart('goldInflation', {
-          title: {
-            text: 'Inflacion de Oro'
-          },
-          xAxis: {
-            categories: datetime
-          },
-          yAxis: {
-            title: {
-              text: 'Oro'
-            }
-          },
-          series: [{
-            name: 'Oro Total',
-            data: gold_total
-          }, {
-            name: 'Oro Inventario',
-            data: gold_inventory
-          }, {
-            name: 'Oro en Banco',
-            data: gold_bank
-          }, {
-            name: 'Oro en Inventario como Item',
-            data: gold_inventory_as_item
-          }, {
-            name: 'Oro en Banco como Item',
-            data: gold_bank_as_item
-          }]
-        });
-      }
-    });
-
-    $.ajax({
-      url: "https://api.ao20.com.ar:2083/statistics/getItemsStatistics",
-      success: function(data) {
-
-        var sample = data[0] || {};
-        var nameKey     = 'NAME'           in sample ? 'NAME'           : 'name';
-        var quantityKey = 'total_quantity' in sample ? 'total_quantity' : 'quantity';
-        var datetimeKey = 'datetime'       in sample ? 'datetime'       : 'date';
-
-        // Agrupar datos por nombre de item
-        let chartData = {};
-        data.forEach((item) => {
-          var name = item[nameKey];
-          if (!name) return;
-          if (!chartData[name]) chartData[name] = [];
-          chartData[name].push({
-            x: new Date(item[datetimeKey]).getTime(),
-            y: Number(item[quantityKey]) || 0
-          });
-        });
-
-        var allItemNames = Object.keys(chartData);
-
-        // Gráfico vacío — se agregan series dinámicamente al buscar
-        // Reducir datos: quedarse con el último punto de cada día por item
-        function downsampleDaily(points) {
-          var byDay = {};
-          points.forEach(function(p) {
-            var day = new Date(p.x);
-            var key = day.getFullYear() + '-' + day.getMonth() + '-' + day.getDate();
-            byDay[key] = p; // sobreescribe, queda el último del día
-          });
-          return Object.values(byDay).sort(function(a, b) { return a.x - b.x; });
-        }
-
-        var itemsChart = Highcharts.chart('itemsQuantity', {
-          chart: {
-            height: 500,
-            zoomType: 'x',
-            animation: false
-          },
-          title: { text: 'Cantidad de items' },
-          xAxis: {
-            type: 'datetime',
-            labels: { format: '{value:%d/%m/%y}', rotation: -45 }
-          },
-          yAxis: {
-            title: { text: 'Cantidad' },
-            min: 0
-          },
-          tooltip: {
-            xDateFormat: '%d/%m/%Y %H:%M',
-            pointFormat: '<span style="color:{series.color}">\u25CF</span> {series.name}: <b>{point.y}</b><br/>'
-          },
-          legend: {
-            enabled: true,
-            maxHeight: 120,
-            navigation: { enabled: true }
-          },
-          plotOptions: {
-            series: { marker: { enabled: false }, animation: false }
-          },
-          series: []
-        });
-
-        // Buscador
-        var $search = $('#itemsSearch');
-        var $clear  = $('#itemsSearchClear');
-        var $count  = $('#itemsSearchCount');
-        var currentQuery = '';
-
-        function normalizeStr(str) {
-          return str.toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '') // quita acentos
-            .replace(/ñ/g, 'n')
-            .replace(/ü/g, 'u');
-        }
-
-        function applyItemsFilter(query) {
-          var terms = normalizeStr(query.trim()).split(/\s+/).filter(function(t) { return t.length >= 2; });
-          var termKey = terms.join('|');
-          if (termKey === currentQuery) return;
-          currentQuery = termKey;
-
-          while (itemsChart.series.length > 0) {
-            itemsChart.series[0].remove(false);
-          }
-
-          if (terms.length === 0) {
-            itemsChart.redraw();
-            $count.text('Escribí al menos 2 caracteres para buscar');
-            $clear.hide();
-            return;
-          }
-
-          var matched = allItemNames.filter(function(name) {
-            var n = normalizeStr(name);
-            return terms.some(function(t) { return n.indexOf(t) !== -1; });
-          });
-
-          matched.forEach(function(name) {
-            var pts = downsampleDaily(chartData[name]);
-            console.log('[items] Serie "' + name + '": ' + chartData[name].length + ' puntos originales → ' + pts.length + ' después de downsample');
-            itemsChart.addSeries({ name: name, data: pts }, false);
-          });
-
-          itemsChart.redraw();
-          $count.text(matched.length + ' resultado' + (matched.length !== 1 ? 's' : '') + ' de ' + allItemNames.length + ' items');
-          $clear.show();
-        }
-
-        $search.on('input', function() { applyItemsFilter($(this).val()); });
-        $clear.on('click', function() { $search.val(''); applyItemsFilter(''); });
-      },
-      error: function(xhr, status, err) {
-        console.error('[items] Error API:', status, err);
-      }
-    });
-
-    window.onload = () => {
-      var usuariosPorClaseData = <?php echo json_encode($usuariosPorClase); ?>;
-      var clasesPorRazaData = <?php echo json_encode($clasesPorRaza); ?>;
-      var usuariosPorLevelData = <?php echo json_encode($usuariosPorLevel); ?>;
-      var killsPorClaseData = <?php echo json_encode($killsPorClase); ?>;
-      var onlinePorHoraData = <?php echo json_encode($usuariosOnlinePorHora); ?>;
-
-      if (usuariosPorClaseData.length > 0) {
-      Highcharts.chart('chartUsuariosPorClase', {
-        chart: {
-          plotBackgroundColor: null,
-          plotBorderWidth: null,
-          plotShadow: false,
-          type: 'pie'
-        },
-        title: {
-          text: 'Usuarios por clase'
-        },
-        subtitle: {
-          text: 'todos los personajes del servidor'
-        },
-        tooltip: {
-          pointFormat: '{series.name}: <b>{point.y}</b>'
-        },
-        accessibility: {
-          point: {
-            valueSuffix: '%'
-          }
-        },
-        plotOptions: {
-          pie: {
-            allowPointSelect: true,
-            cursor: 'pointer',
-            dataLabels: {
-              enabled: false
-            },
-            showInLegend: true
-          }
-        },
-        series: [{
-          name: 'Usuarios',
-          colorByPoint: true,
-          data: usuariosPorClaseData
-        }]
-      });
-      } else {
-        document.getElementById('chartUsuariosPorClase').innerHTML = '<p class="text-muted">No se pudieron cargar las estadísticas.</p>';
-      }
-
-      if (clasesPorRazaData.length > 0) {
-      Highcharts.chart('chartClasesPorRaza', {
-        chart: {
-          type: 'column'
-        },
-        title: {
-          text: 'Clases por Raza'
-        },
-        subtitle: {
-          text: 'todos los personajes del servidor'
-        },
-        xAxis: {
-          categories: [
-            'Mago',
-            'Clérigo',
-            'Guerrero',
-            'Asesino',
-            'Bardo',
-            'Druida',
-            'Paladin',
-            'Cazador',
-            'Trabajador',
-            'Bandido'
-          ],
-          crosshair: true
-        },
-        yAxis: {
-          min: 0,
-          title: {
-            text: 'numero de usuarios'
-          }
-        },
-        tooltip: {
-          headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
-          pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
-            '<td style="padding:0"><b>{point.y} Pjs</b></td></tr>',
-          footerFormat: '</table>',
-          shared: true,
-          useHTML: true
-        },
-        plotOptions: {
-          column: {
-            pointPadding: 0.2,
-            borderWidth: 0
-          }
-        },
-        series: clasesPorRazaData
-      });
-      } else {
-        document.getElementById('chartClasesPorRaza').innerHTML = '<p class="text-muted">No se pudieron cargar las estadísticas.</p>';
-      }
-
-      if (usuariosPorLevelData.length > 0) {
-      Highcharts.chart('chartUsuariosPorLevel', {
-        title: {
-          text: 'Usuarios por nivel'
-        },
-        subtitle: {
-          text: 'Cantidad de usuarios existentes por cada nivel de personaje'
-        },
-        yAxis: {
-          title: {
-            text: 'Cantidad de usuarios'
-          }
-        },
-        xAxis: {
-          title: {
-            text: 'Nivel'
-          },
-          allowDecimals: false,
-          tickInterval: 1
-        },
-        legend: {
-          layout: 'horizontal',
-          align: 'center',
-          verticalAlign: 'bottom'
-        },
-
-        plotOptions: {
-          series: {
-            label: {
-              connectorAllowed: false
-            },
-            pointStart: 1
-          }
-        },
-
-        series: [{
-          name: 'Cantidad de usuarios',
-          data: usuariosPorLevelData
-        }, ],
-
-        responsive: {
-          rules: [{
-            condition: {
-              maxWidth: 500
-            },
-            chartOptions: {
-              legend: {
-                layout: 'horizontal',
-                align: 'center',
-                verticalAlign: 'bottom'
-              }
-            }
-          }]
-        }
-      });
-      } else {
-        document.getElementById('chartUsuariosPorLevel').innerHTML = '<p class="text-muted">No se pudieron cargar las estadísticas.</p>';
-      }
-
-      // Online users by hour chart
-      if (onlinePorHoraData.length > 0) {
-        var horaCategories = [];
-        for (var h = 0; h < 24; h++) {
-          horaCategories.push((h < 10 ? '0' : '') + h + ':00');
-        }
-        Highcharts.chart('chartUsuariosOnlinePorHora', {
-          chart: { type: 'column' },
-          title: { text: 'Usuarios online por hora' },
-          subtitle: { text: 'Promedio de usuarios conectados por hora del día' },
-          xAxis: { categories: horaCategories, crosshair: true },
-          yAxis: { min: 0, title: { text: 'Promedio de usuarios' } },
-          tooltip: { pointFormat: '{series.name}: <b>{point.y:.1f}</b>' },
-          plotOptions: { column: { pointPadding: 0.2, borderWidth: 0 } },
-          series: [{ name: 'Usuarios online', data: onlinePorHoraData }]
-        });
-      } else {
-        document.getElementById('chartUsuariosOnlinePorHora').innerHTML = '<p class="text-muted">No se pudieron cargar las estadísticas.</p>';
-      }
-
-      if (killsPorClaseData.length > 0) {
-      Highcharts.chart('chartUsuariosMatadosPorClase', {
-        chart: {
-          type: 'bar'
-        },
-        title: {
-          text: 'Promedio de usuarios matados por clase'
-        },
-        subtitle: {
-          text: 'todos los personajes del servidor'
-        },
-        xAxis: {
-          categories: killsPorClaseData.map(x => x.name),
-          title: {
-            text: 'Clase'
-          }
-        },
-        yAxis: {
-          min: 0,
-          title: {
-            text: 'Promedio usuarios matados',
-            align: 'high'
-          },
-          labels: {
-            overflow: 'justify'
-          }
-        },
-        tooltip: {
-          valueSuffix: ''
-        },
-        plotOptions: {
-          bar: {
-            dataLabels: {
-              enabled: true
-            }
-          }
-        },
-        legend: {
-          layout: 'vertical',
-          align: 'right',
-          verticalAlign: 'top',
-          x: -40,
-          y: 80,
-          floating: true,
-          borderWidth: 1,
-          backgroundColor: Highcharts.defaultOptions.legend.backgroundColor || '#FFFFFF',
-          shadow: true
-        },
-        credits: {
-          enabled: false
-        },
-        series: [{
-          name: 'Usuarios Matados',
-          data: killsPorClaseData.map(x => x.y)
-        }]
-      });
-      } else {
-        document.getElementById('chartUsuariosMatadosPorClase').innerHTML = '<p class="text-muted">No se pudieron cargar las estadísticas.</p>';
-      }
-    };
-  </script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js" integrity="sha384-XcdcwHqIPULERb2yDEM4R0XaQKU3YnDsrTmjACBZyfdVVqjh6xQ4/DCMd7XLcA6Y" crossorigin="anonymous" defer></script>
+  <!-- Hammer.js (zoom plugin dependency) -->
+  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js" integrity="sha384-Cs3dgUx6+jDxxuqHvVH8Onpyj2LF1gKZurLDlhqzuJmUqVYMJ0THTWpxK5Z086Zm" crossorigin="anonymous" defer></script>
+  <!-- chartjs-plugin-zoom -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js" integrity="sha384-dwwI6ICEN/0ZQlS5owhUa/6ZzvwUPmjH45bFVCAcjgjTulbHJvlE+TGU3g1k0N3R" crossorigin="anonymous" defer></script>
+  <!-- Bootstrap 5 bundle (includes Popper) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous" defer></script>
+  <!-- Charts module -->
+  <script src="./js/charts.js" defer></script>
 </body>
 
 </html>
