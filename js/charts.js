@@ -404,7 +404,112 @@
   var chartData = {};
   var allItemNames = [];
   var itemsChart = null;
-  var currentQuery = '';
+  var selectedItems = new Set();
+  var MAX_SELECTED = 20;
+
+  function updateSelectedTags() {
+    var container = document.getElementById('itemsSelectedTags');
+    if (!container) return;
+    container.innerHTML = '';
+
+    selectedItems.forEach(function (name) {
+      var badge = document.createElement('span');
+      badge.className = 'badge bg-primary me-1 mb-1';
+      badge.textContent = name;
+
+      var btn = document.createElement('button');
+      btn.className = 'btn-close btn-close-white ms-1';
+      btn.setAttribute('aria-label', 'Quitar');
+      btn.style.fontSize = '0.55em';
+      btn.addEventListener('click', function () {
+        toggleItemSelection(name);
+      });
+
+      badge.appendChild(btn);
+      container.appendChild(badge);
+    });
+  }
+
+  function clearAllSelections() {
+    selectedItems.clear();
+    updateItemsChart();
+    updateSelectedTags();
+
+    var resultsList = document.getElementById('itemsResultsList');
+    if (resultsList) {
+      resultsList.style.display = 'none';
+    }
+
+    var limitMsg = document.getElementById('itemsLimitMsg');
+    if (limitMsg) {
+      limitMsg.textContent = '';
+      limitMsg.style.display = 'none';
+    }
+  }
+
+  function updateItemsChart() {
+    if (!itemsChart) return;
+
+    itemsChart.data.datasets = [];
+
+    var colorIdx = 0;
+    selectedItems.forEach(function (name) {
+      var pts = chartData[name];
+      if (pts) {
+        itemsChart.data.datasets.push({
+          label: name,
+          data: pts,
+          borderColor: DARK_PALETTE[colorIdx % DARK_PALETTE.length],
+          backgroundColor: 'transparent',
+          fill: false,
+          tension: 0.1,
+          pointRadius: 0
+        });
+        colorIdx++;
+      }
+    });
+
+    itemsChart.update();
+  }
+
+  function toggleItemSelection(itemName) {
+    if (selectedItems.has(itemName)) {
+      selectedItems.delete(itemName);
+    } else if (selectedItems.size < MAX_SELECTED) {
+      selectedItems.add(itemName);
+    } else {
+      // Show limit message
+      var limitMsg = document.getElementById('itemsLimitMsg');
+      if (limitMsg) {
+        limitMsg.textContent = 'Se alcanzó el límite máximo de ' + MAX_SELECTED + ' items.';
+        limitMsg.style.display = '';
+        setTimeout(function () {
+          limitMsg.style.display = 'none';
+          limitMsg.textContent = '';
+        }, 2000);
+      }
+      return;
+    }
+
+    updateItemsChart();
+    updateSelectedTags();
+
+    // Update visual state in results list if visible
+    var resultsList = document.getElementById('itemsResultsList');
+    if (resultsList) {
+      var items = resultsList.querySelectorAll('.list-group-item');
+      for (var i = 0; i < items.length; i++) {
+        if (items[i].textContent === itemName) {
+          if (selectedItems.has(itemName)) {
+            items[i].classList.add('active');
+          } else {
+            items[i].classList.remove('active');
+          }
+          break;
+        }
+      }
+    }
+  }
 
   function renderItemsChart(id) {
     showLoading(id);
@@ -512,6 +617,8 @@
         var searchInput = document.getElementById('itemsSearch');
         var clearBtn = document.getElementById('itemsSearchClear');
         if (searchInput) {
+          searchInput.disabled = false;
+          searchInput.placeholder = 'Buscar items (ej: leña barca mineral)';
           searchInput.addEventListener('input', function () {
             applyItemsFilter(searchInput.value);
           });
@@ -519,7 +626,9 @@
         if (clearBtn) {
           clearBtn.addEventListener('click', function () {
             if (searchInput) searchInput.value = '';
-            applyItemsFilter('');
+            clearAllSelections();
+            var countEl = document.getElementById('itemsSearchCount');
+            if (countEl) countEl.textContent = '';
           });
         }
       })
@@ -531,48 +640,69 @@
   // ── 6.3 Items search/filter ──────────────────────────────────────────────
   function applyItemsFilter(query) {
     var terms = normalizeStr(query.trim()).split(/\s+/).filter(function (t) { return t.length >= 2; });
-    var termKey = terms.join('|');
-    if (termKey === currentQuery) return;
-    currentQuery = termKey;
 
-    if (!itemsChart) return;
-
-    // Remove all existing datasets
-    itemsChart.data.datasets = [];
-
+    var resultsList = document.getElementById('itemsResultsList');
     var countEl = document.getElementById('itemsSearchCount');
     var clearBtn = document.getElementById('itemsSearchClear');
 
+    // If query has no valid terms (< 2 chars each): hide list, show guide text
     if (terms.length === 0) {
-      itemsChart.update();
-      if (countEl) countEl.textContent = 'Escribí al menos 2 caracteres para buscar';
-      if (clearBtn) clearBtn.style.display = 'none';
+      if (resultsList) {
+        resultsList.innerHTML = '';
+        resultsList.style.display = 'none';
+      }
+      if (countEl) countEl.textContent = query.trim().length > 0 ? 'Escribí al menos 2 caracteres para buscar' : '';
+      if (clearBtn) clearBtn.style.display = query.trim().length > 0 ? '' : 'none';
       return;
     }
 
+    // Filter allItemNames using normalizeStr
     var matched = allItemNames.filter(function (name) {
       var n = normalizeStr(name);
       return terms.some(function (t) { return n.indexOf(t) !== -1; });
     });
 
-    var colorIdx = 0;
-    matched.forEach(function (name) {
-      var pts = chartData[name];
-      itemsChart.data.datasets.push({
-        label: name,
-        data: pts,
-        borderColor: DARK_PALETTE[colorIdx % DARK_PALETTE.length],
-        backgroundColor: 'transparent',
-        fill: false,
-        tension: 0.1,
-        pointRadius: 0
-      });
-      colorIdx++;
-    });
-
-    itemsChart.update();
-    if (countEl) countEl.textContent = matched.length + ' resultado' + (matched.length !== 1 ? 's' : '') + ' de ' + allItemNames.length + ' items';
+    // Show clear button when there's a query
     if (clearBtn) clearBtn.style.display = '';
+
+    // Update counter with appropriate format
+    if (countEl) {
+      if (matched.length > MAX_SELECTED) {
+        countEl.textContent = 'Mostrando ' + MAX_SELECTED + ' de ' + matched.length + ' resultados';
+      } else {
+        countEl.textContent = matched.length + ' resultado' + (matched.length !== 1 ? 's' : '') + ' de ' + allItemNames.length + ' items';
+      }
+    }
+
+    // Populate results list (max 20 visible)
+    if (resultsList) {
+      resultsList.innerHTML = '';
+
+      if (matched.length === 0) {
+        resultsList.style.display = 'none';
+        return;
+      }
+
+      var visible = matched.slice(0, MAX_SELECTED);
+      visible.forEach(function (name) {
+        var a = document.createElement('a');
+        a.className = 'list-group-item list-group-item-action';
+        if (selectedItems.has(name)) {
+          a.classList.add('active');
+        }
+        a.textContent = name;
+        a.href = '#';
+        a.addEventListener('click', function (e) {
+          e.preventDefault();
+          toggleItemSelection(name);
+          // Re-apply filter to refresh visual state of the list
+          applyItemsFilter(query);
+        });
+        resultsList.appendChild(a);
+      });
+
+      resultsList.style.display = '';
+    }
   }
 
   // ── 7.1 Static charts orchestration ────────────────────────────────────
@@ -640,7 +770,18 @@
       renderGoldInflationChart: renderGoldInflationChart,
       renderItemsChart: renderItemsChart,
       applyItemsFilter: applyItemsFilter,
-      initStaticCharts: initStaticCharts
+      initStaticCharts: initStaticCharts,
+      toggleItemSelection: toggleItemSelection,
+      updateItemsChart: updateItemsChart,
+      updateSelectedTags: updateSelectedTags,
+      clearAllSelections: clearAllSelections,
+      get selectedItems() { return selectedItems; },
+      MAX_SELECTED: MAX_SELECTED,
+      chartData: chartData,
+      get allItemNames() { return allItemNames; },
+      set allItemNames(v) { allItemNames = v; },
+      get itemsChart() { return itemsChart; },
+      set itemsChart(v) { itemsChart = v; }
     };
   }
 })();

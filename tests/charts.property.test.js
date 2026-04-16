@@ -12,10 +12,14 @@ MockChart.defaults = {
 };
 globalThis.Chart = MockChart;
 
+const chartsModule = require('../js/charts.js');
 const {
   normalizeStr, downsampleDaily, showError,
-  renderPieChart, renderColumnChart, renderBarChart, renderLineChart
-} = require('../js/charts.js');
+  renderPieChart, renderColumnChart, renderBarChart, renderLineChart,
+  toggleItemSelection, selectedItems, MAX_SELECTED,
+  updateItemsChart, DARK_PALETTE, chartData,
+  applyItemsFilter
+} = chartsModule;
 
 // ── Arbitrary: alphanumeric container ID ───────────────────────────────────
 const arbContainerId = fc.string({
@@ -523,6 +527,755 @@ describe('Feature: chartjs-migration, Property 5: Filter results equal chart dat
           expect(countText).toContain(String(matched.length));
           expect(countText).toContain(String(names.length));
         }
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: items-statistics-filter, Property 1: Invariante de límite de selección
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: items-statistics-filter, Property 1: Invariante de límite de selección', () => {
+  /**
+   * **Validates: Requirements 1.1, 3.4**
+   *
+   * For any sequence of toggle operations (add, remove),
+   * the size of selectedItems must never exceed 20.
+   */
+
+  beforeEach(() => {
+    selectedItems.clear();
+    document.body.innerHTML = '<span id="itemsLimitMsg" style="display: none;"></span>';
+  });
+
+  // Arbitrary: generate a sequence of toggle operations on item names
+  const arbItemName = fc.string({
+    unit: fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz'.split('')),
+    minLength: 1,
+    maxLength: 10
+  });
+
+  const arbToggleSequence = fc.array(arbItemName, { minLength: 1, maxLength: 50 });
+
+  it('selectedItems.size never exceeds MAX_SELECTED after any sequence of toggles', () => {
+    fc.assert(
+      fc.property(arbToggleSequence, (sequence) => {
+        selectedItems.clear();
+
+        for (const itemName of sequence) {
+          toggleItemSelection(itemName);
+          expect(selectedItems.size).toBeLessThanOrEqual(MAX_SELECTED);
+        }
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: items-statistics-filter, Property 2: Round-trip de selección/deselección
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: items-statistics-filter, Property 2: Round-trip de selección/deselección', () => {
+  /**
+   * **Validates: Requirements 2.3, 2.4, 3.2**
+   *
+   * For any item name that is not currently selected, selecting it and then
+   * deselecting it must leave selectedItems in the same state as before.
+   */
+
+  beforeEach(() => {
+    selectedItems.clear();
+    document.body.innerHTML = '<span id="itemsLimitMsg" style="display: none;"></span>';
+  });
+
+  const arbItemName = fc.string({
+    unit: fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz0123456789'.split('')),
+    minLength: 1,
+    maxLength: 15
+  });
+
+  it('selecting then deselecting an item from empty state restores empty set', () => {
+    fc.assert(
+      fc.property(arbItemName, (itemName) => {
+        selectedItems.clear();
+
+        // Snapshot before
+        expect(selectedItems.size).toBe(0);
+
+        // Select (toggle on)
+        toggleItemSelection(itemName);
+        expect(selectedItems.has(itemName)).toBe(true);
+
+        // Deselect (toggle off)
+        toggleItemSelection(itemName);
+        expect(selectedItems.has(itemName)).toBe(false);
+
+        // Back to original empty state
+        expect(selectedItems.size).toBe(0);
+      }),
+      { numRuns: 100 }
+    );
+  });
+
+  it('selecting then deselecting a new item preserves pre-existing selections', () => {
+    fc.assert(
+      fc.property(
+        fc.set(arbItemName, { minLength: 1, maxLength: 5 }),
+        arbItemName,
+        (preSelected, newItem) => {
+          selectedItems.clear();
+          document.body.innerHTML = '<span id="itemsLimitMsg" style="display: none;"></span>';
+
+          // Pre-select some items
+          for (const name of preSelected) {
+            toggleItemSelection(name);
+          }
+
+          // Skip if newItem is already in the pre-selected set
+          if (selectedItems.has(newItem)) return;
+
+          // Snapshot state before round-trip
+          const snapshotBefore = new Set(selectedItems);
+
+          // Toggle on
+          toggleItemSelection(newItem);
+          expect(selectedItems.has(newItem)).toBe(true);
+
+          // Toggle off
+          toggleItemSelection(newItem);
+          expect(selectedItems.has(newItem)).toBe(false);
+
+          // Verify state is restored exactly
+          expect(selectedItems.size).toBe(snapshotBefore.size);
+          for (const name of snapshotBefore) {
+            expect(selectedItems.has(name)).toBe(true);
+          }
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: items-statistics-filter, Property 10: Colores de datasets provienen de DARK_PALETTE
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: items-statistics-filter, Property 10: Colores de datasets provienen de DARK_PALETTE', () => {
+  /**
+   * **Validates: Requirements 6.3**
+   *
+   * For any set of selected items that have data in chartData,
+   * every dataset added by updateItemsChart must have a borderColor
+   * that belongs to the DARK_PALETTE array.
+   */
+
+  beforeEach(() => {
+    selectedItems.clear();
+    // Clean up chartData entries from previous runs
+    Object.keys(chartData).forEach(k => delete chartData[k]);
+    // Reset mock chart instance datasets
+    mockChartInstance.data.datasets = [];
+    mockChartInstance.update.mockClear();
+    // Set itemsChart to the mock so updateItemsChart doesn't bail out
+    chartsModule.itemsChart = mockChartInstance;
+    document.body.innerHTML = '<span id="itemsLimitMsg" style="display: none;"></span>';
+  });
+
+  // Arbitrary: unique item names (1-20 items)
+  const arbItemName = fc.string({
+    unit: fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz'.split('')),
+    minLength: 1,
+    maxLength: 12
+  });
+
+  const arbItemSet = fc.set(arbItemName, { minLength: 1, maxLength: 20 });
+
+  it('every dataset borderColor belongs to DARK_PALETTE', () => {
+    fc.assert(
+      fc.property(arbItemSet, (itemNames) => {
+        // Reset state
+        selectedItems.clear();
+        Object.keys(chartData).forEach(k => delete chartData[k]);
+        mockChartInstance.data.datasets = [];
+
+        // Populate chartData with dummy time-series data for each item
+        for (const name of itemNames) {
+          chartData[name] = [
+            { x: 1704067200000, y: 10 },
+            { x: 1704153600000, y: 20 }
+          ];
+        }
+
+        // Add each item to selectedItems (respecting the 20 limit)
+        for (const name of itemNames) {
+          selectedItems.add(name);
+        }
+
+        // Call updateItemsChart to build datasets
+        updateItemsChart();
+
+        // Verify every dataset's borderColor is in DARK_PALETTE
+        const datasets = mockChartInstance.data.datasets;
+        expect(datasets.length).toBe(itemNames.size);
+
+        for (const ds of datasets) {
+          expect(DARK_PALETTE).toContain(ds.borderColor);
+        }
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: items-statistics-filter, Property 6: Cantidad de tags igual a cantidad de seleccionados
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: items-statistics-filter, Property 6: Cantidad de tags igual a cantidad de seleccionados', () => {
+  /**
+   * **Validates: Requirements 3.1**
+   *
+   * For any set of selected items, the number of tags/chips rendered
+   * in the tags container must be exactly equal to selectedItems.size.
+   */
+
+  const { updateSelectedTags } = chartsModule;
+
+  beforeEach(() => {
+    selectedItems.clear();
+    document.body.innerHTML =
+      '<div id="itemsSelectedTags"></div>' +
+      '<span id="itemsLimitMsg" style="display: none;"></span>';
+  });
+
+  // Arbitrary: unique item names (0-20 items)
+  const arbItemName = fc.string({
+    unit: fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz'.split('')),
+    minLength: 1,
+    maxLength: 12
+  });
+
+  const arbItemSet = fc.set(arbItemName, { minLength: 0, maxLength: 20 });
+
+  it('badge count in #itemsSelectedTags equals selectedItems.size', () => {
+    fc.assert(
+      fc.property(arbItemSet, (itemNames) => {
+        selectedItems.clear();
+
+        // Add each item to selectedItems
+        for (const name of itemNames) {
+          selectedItems.add(name);
+        }
+
+        // Render tags
+        updateSelectedTags();
+
+        // Count .badge elements
+        const container = document.getElementById('itemsSelectedTags');
+        const badges = container.querySelectorAll('.badge');
+        expect(badges.length).toBe(selectedItems.size);
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: items-statistics-filter, Property 8: Limpiar todo vacía selecciones y chart
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: items-statistics-filter, Property 8: Limpiar todo vacía selecciones y chart', () => {
+  /**
+   * **Validates: Requirements 3.3**
+   *
+   * For any non-empty set of selected items, calling clearAllSelections
+   * must result in selectedItems being empty, 0 datasets in the chart,
+   * and 0 tags rendered.
+   */
+
+  const { clearAllSelections, updateSelectedTags } = chartsModule;
+
+  beforeEach(() => {
+    selectedItems.clear();
+    Object.keys(chartData).forEach(k => delete chartData[k]);
+    mockChartInstance.data.datasets = [];
+    mockChartInstance.update.mockClear();
+    chartsModule.itemsChart = mockChartInstance;
+    document.body.innerHTML =
+      '<div id="itemsSelectedTags"></div>' +
+      '<div id="itemsResultsList"></div>' +
+      '<span id="itemsLimitMsg" style="display: none;"></span>';
+  });
+
+  // Arbitrary: unique item names (1-20 items)
+  const arbItemName = fc.string({
+    unit: fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz'.split('')),
+    minLength: 1,
+    maxLength: 12
+  });
+
+  const arbItemSet = fc.set(arbItemName, { minLength: 1, maxLength: 20 });
+
+  it('clearAllSelections empties selectedItems, chart datasets, and tags', () => {
+    fc.assert(
+      fc.property(arbItemSet, (itemNames) => {
+        // Reset state
+        selectedItems.clear();
+        Object.keys(chartData).forEach(k => delete chartData[k]);
+        mockChartInstance.data.datasets = [];
+
+        // Populate chartData with dummy data for each item
+        for (const name of itemNames) {
+          chartData[name] = [
+            { x: 1704067200000, y: 10 },
+            { x: 1704153600000, y: 20 }
+          ];
+        }
+
+        // Add each item to selectedItems
+        for (const name of itemNames) {
+          selectedItems.add(name);
+        }
+
+        // Populate chart datasets to simulate selected state
+        for (const name of itemNames) {
+          mockChartInstance.data.datasets.push({
+            label: name,
+            data: chartData[name],
+            borderColor: '#375a7f',
+            backgroundColor: 'transparent'
+          });
+        }
+
+        // Render tags so there are badges in the DOM
+        updateSelectedTags();
+
+        // Verify pre-conditions: non-empty state
+        expect(selectedItems.size).toBeGreaterThan(0);
+        expect(mockChartInstance.data.datasets.length).toBeGreaterThan(0);
+        const tagsBefore = document.getElementById('itemsSelectedTags').querySelectorAll('.badge');
+        expect(tagsBefore.length).toBeGreaterThan(0);
+
+        // Act
+        clearAllSelections();
+
+        // Assert: selectedItems is empty
+        expect(selectedItems.size).toBe(0);
+
+        // Assert: chart has 0 datasets
+        expect(mockChartInstance.data.datasets.length).toBe(0);
+
+        // Assert: 0 tags rendered
+        const tagsAfter = document.getElementById('itemsSelectedTags').querySelectorAll('.badge');
+        expect(tagsAfter.length).toBe(0);
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: items-statistics-filter, Property 4: Umbral mínimo de 2 caracteres para búsqueda
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: items-statistics-filter, Property 4: Umbral mínimo de 2 caracteres para búsqueda', () => {
+  /**
+   * **Validates: Requirements 2.1**
+   *
+   * For any query where all terms are < 2 chars after normalizing,
+   * #itemsResultsList should be empty/hidden and no results shown.
+   */
+
+  beforeEach(() => {
+    selectedItems.clear();
+    Object.keys(chartData).forEach(k => delete chartData[k]);
+    // Populate allItemNames with some items so there's data to potentially match
+    const sampleNames = ['Espada Larga', 'Poción de Maná', 'Escudo de Hierro', 'Arco Élfico', 'Túnica Mágica'];
+    chartsModule.allItemNames = sampleNames;
+    for (const name of sampleNames) {
+      chartData[name] = [{ x: 1704067200000, y: 10 }];
+    }
+    document.body.innerHTML =
+      '<div id="itemsResultsList" style="display: none;"></div>' +
+      '<span id="itemsSearchCount"></span>' +
+      '<button id="itemsSearchClear" style="display: none;"></button>' +
+      '<span id="itemsLimitMsg" style="display: none;"></span>' +
+      '<div id="itemsSelectedTags"></div>';
+  });
+
+  // Arbitrary: queries where every token is < 2 chars (single chars, spaces, empty)
+  const arbShortQuery = fc.string({
+    unit: fc.constantFrom(
+      ...'abcdefghijklmnopqrstuvwxyzáéíóúñü0123456789 '.split('')
+    ),
+    minLength: 0,
+    maxLength: 15
+  }).filter(q => {
+    // Ensure ALL tokens after normalizing are < 2 chars
+    const normalized = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ñ/g, 'n').replace(/ü/g, 'u');
+    const terms = normalized.trim().split(/\s+/).filter(t => t.length >= 2);
+    return terms.length === 0;
+  });
+
+  it('queries with all terms < 2 chars produce no visible results', () => {
+    fc.assert(
+      fc.property(arbShortQuery, (query) => {
+        applyItemsFilter(query);
+
+        const resultsList = document.getElementById('itemsResultsList');
+        // Results list should be hidden or empty
+        const items = resultsList.querySelectorAll('.list-group-item');
+        expect(items.length).toBe(0);
+
+        // Either display is none or innerHTML is empty
+        const isHidden = resultsList.style.display === 'none' || resultsList.innerHTML === '';
+        expect(isHidden).toBe(true);
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: items-statistics-filter, Property 5: Búsqueda insensible a acentos y mayúsculas
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: items-statistics-filter, Property 5: Búsqueda insensible a acentos y mayúsculas', () => {
+  /**
+   * **Validates: Requirements 2.2**
+   *
+   * For any item name and any variation with different capitalization
+   * or accents, the filter should produce the same match results.
+   */
+
+  // Helper: build a set of item names and set up the DOM + closure state
+  function setupFilterEnv(itemNames) {
+    selectedItems.clear();
+    Object.keys(chartData).forEach(k => delete chartData[k]);
+    chartsModule.allItemNames = itemNames;
+    for (const name of itemNames) {
+      chartData[name] = [{ x: 1704067200000, y: 10 }];
+    }
+    document.body.innerHTML =
+      '<div id="itemsResultsList" style="display: none;"></div>' +
+      '<span id="itemsSearchCount"></span>' +
+      '<button id="itemsSearchClear" style="display: none;"></button>' +
+      '<span id="itemsLimitMsg" style="display: none;"></span>' +
+      '<div id="itemsSelectedTags"></div>';
+  }
+
+  // Helper: get the list of matched item names from the DOM after applying filter
+  function getVisibleResults() {
+    const resultsList = document.getElementById('itemsResultsList');
+    const items = resultsList.querySelectorAll('.list-group-item');
+    return Array.from(items).map(el => el.textContent);
+  }
+
+  // Arbitrary: item names with accented characters
+  const arbAccentedName = fc.string({
+    unit: fc.constantFrom(
+      ...'abcdefghijklmnopqrstuvwxyz'.split(''),
+      'á', 'é', 'í', 'ó', 'ú', 'ñ', 'ü'
+    ),
+    minLength: 3,
+    maxLength: 15
+  });
+
+  const arbItemNames = fc.set(arbAccentedName, { minLength: 1, maxLength: 15 });
+
+  // Map of accent → base letter pairs for generating variations
+  const accentVariations = {
+    'a': ['a', 'A', 'á', 'Á'],
+    'e': ['e', 'E', 'é', 'É'],
+    'i': ['i', 'I', 'í', 'Í'],
+    'o': ['o', 'O', 'ó', 'Ó'],
+    'u': ['u', 'U', 'ú', 'Ú'],
+    'n': ['n', 'N', 'ñ', 'Ñ'],
+  };
+
+  // Generate a query variation: take a base query (>= 2 chars) and randomly
+  // change case or add/remove accents
+  function makeVariation(base) {
+    return base.split('').map(ch => {
+      const lower = ch.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const variants = accentVariations[lower];
+      if (variants) {
+        return variants[Math.floor(Math.random() * variants.length)];
+      }
+      return Math.random() > 0.5 ? ch.toUpperCase() : ch.toLowerCase();
+    }).join('');
+  }
+
+  it('different accent/case variations of the same query produce the same matches', () => {
+    fc.assert(
+      fc.property(arbItemNames, fc.integer({ min: 0, max: 14 }), (itemNames, nameIdx) => {
+        const itemNamesArr = Array.from(itemNames);
+        setupFilterEnv(itemNamesArr);
+
+        // Pick a name from the list and extract a substring >= 2 chars as query base
+        const pickedName = itemNamesArr[nameIdx % itemNamesArr.length];
+        const normalized = normalizeStr(pickedName);
+        if (normalized.length < 2) return; // skip if too short
+
+        const baseQuery = normalized.substring(0, Math.min(normalized.length, 4));
+        if (baseQuery.length < 2) return;
+
+        // Apply filter with the base (normalized) query
+        applyItemsFilter(baseQuery);
+        const baseResults = getVisibleResults();
+
+        // Generate a variation with different case/accents
+        const variation = makeVariation(baseQuery);
+
+        // Apply filter with the variation
+        applyItemsFilter(variation);
+        const varResults = getVisibleResults();
+
+        // Both should produce the same set of matched items
+        expect(varResults.sort()).toEqual(baseResults.sort());
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: items-statistics-filter, Property 3: Resultados de búsqueda limitados y contados
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: items-statistics-filter, Property 3: Resultados de búsqueda limitados y contados', () => {
+  /**
+   * **Validates: Requirements 1.2, 1.3**
+   *
+   * For any list of items and query producing > 20 matches,
+   * the visible list should have max 20 items, and the counter
+   * should show both total and displayed counts.
+   */
+
+  beforeEach(() => {
+    selectedItems.clear();
+    Object.keys(chartData).forEach(k => delete chartData[k]);
+    document.body.innerHTML =
+      '<div id="itemsResultsList" style="display: none;"></div>' +
+      '<span id="itemsSearchCount"></span>' +
+      '<button id="itemsSearchClear" style="display: none;"></button>' +
+      '<span id="itemsLimitMsg" style="display: none;"></span>' +
+      '<div id="itemsSelectedTags"></div>';
+  });
+
+  // Generate a list of 25-50 item names that all share a common prefix (ensuring > 20 matches)
+  const arbCommonPrefix = fc.string({
+    unit: fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz'.split('')),
+    minLength: 2,
+    maxLength: 5
+  });
+
+  const arbItemCount = fc.integer({ min: 25, max: 50 });
+
+  it('visible results are capped at 20 and counter shows total vs displayed', () => {
+    fc.assert(
+      fc.property(arbCommonPrefix, arbItemCount, (prefix, count) => {
+        // Generate item names that all contain the prefix
+        const itemNames = [];
+        for (let i = 0; i < count; i++) {
+          itemNames.push(prefix + '_item_' + i);
+        }
+
+        // Set up the environment
+        chartsModule.allItemNames = itemNames;
+        Object.keys(chartData).forEach(k => delete chartData[k]);
+        for (const name of itemNames) {
+          chartData[name] = [{ x: 1704067200000, y: 10 }];
+        }
+
+        // Apply filter with the common prefix (guaranteed >= 2 chars)
+        applyItemsFilter(prefix);
+
+        // Check visible results are capped at MAX_SELECTED (20)
+        const resultsList = document.getElementById('itemsResultsList');
+        const visibleItems = resultsList.querySelectorAll('.list-group-item');
+        expect(visibleItems.length).toBeLessThanOrEqual(MAX_SELECTED);
+        expect(visibleItems.length).toBe(MAX_SELECTED);
+
+        // Check counter shows both total and displayed counts
+        const countEl = document.getElementById('itemsSearchCount');
+        const countText = countEl.textContent;
+        expect(countText).toContain(String(MAX_SELECTED));
+        expect(countText).toContain(String(count));
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: items-statistics-filter, Property 7: Limpiar búsqueda preserva selecciones
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: items-statistics-filter, Property 7: Limpiar búsqueda preserva selecciones', () => {
+  /**
+   * **Validates: Requirements 2.6**
+   *
+   * For any state with selected items and an active search, clearing the
+   * search field (calling applyItemsFilter('')) should hide the results
+   * list without modifying selectedItems or the chart datasets.
+   */
+
+  beforeEach(() => {
+    selectedItems.clear();
+    Object.keys(chartData).forEach(k => delete chartData[k]);
+    mockChartInstance.data.datasets = [];
+    mockChartInstance.update.mockClear();
+    chartsModule.itemsChart = mockChartInstance;
+    document.body.innerHTML =
+      '<div id="itemsResultsList" style="display: none;"></div>' +
+      '<span id="itemsSearchCount"></span>' +
+      '<button id="itemsSearchClear" style="display: none;"></button>' +
+      '<span id="itemsLimitMsg" style="display: none;"></span>' +
+      '<div id="itemsSelectedTags"></div>';
+  });
+
+  // Arbitrary: unique item names (1-15 items to leave room under MAX_SELECTED)
+  const arbItemName = fc.string({
+    unit: fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz'.split('')),
+    minLength: 2,
+    maxLength: 10
+  });
+
+  const arbSelectedSet = fc.set(arbItemName, { minLength: 1, maxLength: 15 });
+
+  it('clearing search preserves selectedItems and chart datasets', () => {
+    fc.assert(
+      fc.property(arbSelectedSet, (itemNames) => {
+        // Reset state
+        selectedItems.clear();
+        Object.keys(chartData).forEach(k => delete chartData[k]);
+        mockChartInstance.data.datasets = [];
+
+        // Populate chartData and allItemNames
+        chartsModule.allItemNames = itemNames;
+        for (const name of itemNames) {
+          chartData[name] = [
+            { x: 1704067200000, y: 10 },
+            { x: 1704153600000, y: 20 }
+          ];
+        }
+
+        // Select all items and build chart datasets
+        for (const name of itemNames) {
+          selectedItems.add(name);
+        }
+        updateItemsChart();
+
+        // Snapshot state before clearing search
+        const selectedBefore = new Set(selectedItems);
+        const datasetsBefore = mockChartInstance.data.datasets.map(ds => ({
+          label: ds.label,
+          borderColor: ds.borderColor,
+          data: ds.data
+        }));
+
+        // Simulate an active search then clear it
+        applyItemsFilter('');
+
+        // Verify selectedItems is unchanged
+        expect(selectedItems.size).toBe(selectedBefore.size);
+        for (const name of selectedBefore) {
+          expect(selectedItems.has(name)).toBe(true);
+        }
+
+        // Verify chart datasets are unchanged
+        const datasetsAfter = mockChartInstance.data.datasets;
+        expect(datasetsAfter.length).toBe(datasetsBefore.length);
+        for (let i = 0; i < datasetsBefore.length; i++) {
+          expect(datasetsAfter[i].label).toBe(datasetsBefore[i].label);
+          expect(datasetsAfter[i].borderColor).toBe(datasetsBefore[i].borderColor);
+        }
+
+        // Verify results list is hidden
+        const resultsList = document.getElementById('itemsResultsList');
+        const isHidden = resultsList.style.display === 'none' || resultsList.innerHTML === '';
+        expect(isHidden).toBe(true);
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: items-statistics-filter, Property 9: Sin re-fetch al cambiar selección
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: items-statistics-filter, Property 9: Sin re-fetch al cambiar selección', () => {
+  /**
+   * **Validates: Requirements 5.2**
+   *
+   * For any sequence of selection/deselection operations after initial load,
+   * fetch should not be called again. All operations work against the
+   * in-memory cache.
+   */
+
+  let fetchSpy;
+
+  beforeEach(() => {
+    selectedItems.clear();
+    Object.keys(chartData).forEach(k => delete chartData[k]);
+    mockChartInstance.data.datasets = [];
+    mockChartInstance.update.mockClear();
+    chartsModule.itemsChart = mockChartInstance;
+    document.body.innerHTML =
+      '<div id="itemsResultsList" style="display: none;"></div>' +
+      '<span id="itemsSearchCount"></span>' +
+      '<button id="itemsSearchClear" style="display: none;"></button>' +
+      '<span id="itemsLimitMsg" style="display: none;"></span>' +
+      '<div id="itemsSelectedTags"></div>';
+
+    // Install a fresh fetch spy that should NOT be called
+    fetchSpy = vi.fn();
+    globalThis.fetch = fetchSpy;
+  });
+
+  // Arbitrary: unique item names and a sequence of toggle indices
+  const arbItemName = fc.string({
+    unit: fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz'.split('')),
+    minLength: 1,
+    maxLength: 10
+  });
+
+  const arbItemPool = fc.set(arbItemName, { minLength: 1, maxLength: 20 });
+  const arbToggleIndices = fc.array(fc.nat({ max: 19 }), { minLength: 1, maxLength: 30 });
+
+  it('fetch is not called during any toggle operations', () => {
+    fc.assert(
+      fc.property(arbItemPool, arbToggleIndices, (itemPool, indices) => {
+        const itemPoolArr = Array.from(itemPool);
+        // Reset state
+        selectedItems.clear();
+        Object.keys(chartData).forEach(k => delete chartData[k]);
+        mockChartInstance.data.datasets = [];
+        fetchSpy.mockClear();
+
+        // Populate chartData (simulating data already loaded)
+        chartsModule.allItemNames = itemPoolArr;
+        for (const name of itemPoolArr) {
+          chartData[name] = [
+            { x: 1704067200000, y: 10 },
+            { x: 1704153600000, y: 20 }
+          ];
+        }
+
+        // Perform a sequence of toggle operations
+        for (const idx of indices) {
+          const name = itemPoolArr[idx % itemPoolArr.length];
+          toggleItemSelection(name);
+        }
+
+        // Verify fetch was never called
+        expect(fetchSpy).not.toHaveBeenCalled();
       }),
       { numRuns: 100 }
     );

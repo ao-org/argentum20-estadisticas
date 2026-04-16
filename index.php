@@ -97,11 +97,14 @@ $stats = getGeneralStats();
     <div class="card-header">Cantidad de items</div>
     <div class="card-body">
       <div class="chart-container"><canvas id="itemsQuantity"></canvas></div>
-      <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
-        <input type="text" id="itemsSearch" class="form-control" placeholder="Buscar items (ej: leña barca mineral)" style="max-width: 350px;" />
+      <div id="itemsSelectedTags" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 4px;"></div>
+      <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px; position: relative;">
+        <input type="text" id="itemsSearch" class="form-control" placeholder="Cargando datos de items..." style="max-width: 350px;" disabled />
         <button id="itemsSearchClear" class="btn btn-secondary btn-sm" style="display:none;">&#x2715; Limpiar</button>
         <span id="itemsSearchCount" style="color: #aaa; font-size: 0.9em;"></span>
+        <span id="itemsLimitMsg" style="color: #e74c3c; font-size: 0.85em; display: none;"></span>
       </div>
+      <div id="itemsResultsList" class="list-group" style="max-width: 350px; max-height: 250px; overflow-y: auto; display: none; margin-top: 4px;"></div>
     </div>
   </div>
 

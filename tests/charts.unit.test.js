@@ -14,7 +14,8 @@ globalThis.Chart = MockChart;
 // charts.js uses an IIFE with module.exports for testing
 const {
   normalizeStr, downsampleDaily, showLoading, showError, DARK_PALETTE,
-  renderPieChart, renderColumnChart, renderBarChart, renderLineChart
+  renderPieChart, renderColumnChart, renderBarChart, renderLineChart,
+  toggleItemSelection, selectedItems, MAX_SELECTED
 } = require('../js/charts.js');
 
 // ── 3.1 Dark theme palette ─────────────────────────────────────────────────
@@ -313,5 +314,67 @@ describe('renderLineChart', () => {
     renderLineChart('lineChart', [1, 2, 3]);
     const config = MockChart.mock.calls[0][1];
     expect(config.data.datasets[0].borderColor).toBe(DARK_PALETTE[0]);
+  });
+});
+
+
+// ── toggleItemSelection ─────────────────────────────────────────────────────
+describe('toggleItemSelection', () => {
+  beforeEach(() => {
+    selectedItems.clear();
+    document.body.innerHTML = `
+      <span id="itemsLimitMsg" style="display: none;"></span>
+      <div id="itemsResultsList" class="list-group">
+        <a class="list-group-item">Leña</a>
+        <a class="list-group-item">Mineral de Hierro</a>
+      </div>
+    `;
+  });
+
+  it('adds an item when not selected', () => {
+    toggleItemSelection('Leña');
+    expect(selectedItems.has('Leña')).toBe(true);
+    expect(selectedItems.size).toBe(1);
+  });
+
+  it('removes an item when already selected', () => {
+    selectedItems.add('Leña');
+    toggleItemSelection('Leña');
+    expect(selectedItems.has('Leña')).toBe(false);
+    expect(selectedItems.size).toBe(0);
+  });
+
+  it('rejects selection when 20 items are already selected', () => {
+    for (var i = 0; i < 20; i++) {
+      selectedItems.add('Item' + i);
+    }
+    toggleItemSelection('NewItem');
+    expect(selectedItems.has('NewItem')).toBe(false);
+    expect(selectedItems.size).toBe(20);
+  });
+
+  it('shows limit message when trying to exceed 20 items', () => {
+    for (var i = 0; i < 20; i++) {
+      selectedItems.add('Item' + i);
+    }
+    toggleItemSelection('NewItem');
+    var limitMsg = document.getElementById('itemsLimitMsg');
+    expect(limitMsg.style.display).toBe('');
+    expect(limitMsg.textContent).toContain('límite máximo');
+  });
+
+  it('adds .active class to matching list item when selecting', () => {
+    toggleItemSelection('Leña');
+    var items = document.querySelectorAll('#itemsResultsList .list-group-item');
+    expect(items[0].classList.contains('active')).toBe(true);
+    expect(items[1].classList.contains('active')).toBe(false);
+  });
+
+  it('removes .active class from matching list item when deselecting', () => {
+    selectedItems.add('Leña');
+    var listItem = document.querySelector('#itemsResultsList .list-group-item');
+    listItem.classList.add('active');
+    toggleItemSelection('Leña');
+    expect(listItem.classList.contains('active')).toBe(false);
   });
 });
