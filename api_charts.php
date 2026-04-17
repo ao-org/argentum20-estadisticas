@@ -14,8 +14,6 @@ echo json_encode([
     'kdRatioByClass'     => getKdRatioByClass(),
     'factionSummary'     => getFactionSummary(),
     'fishingLeaderboard' => getFishingLeaderboard(),
-    'questCompletion'    => getQuestCompletion(),
     'genderDistribution' => getGenderDistribution(),
-    'globalQuestProgress'=> getGlobalQuestProgress(),
     'topNpcHunters'      => getTopNpcHunters(),
 ]);

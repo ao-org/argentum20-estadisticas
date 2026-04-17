@@ -474,55 +474,6 @@
     });
   }
 
-  // ── 5.7 Global quest progress — HTML progress bars ───────────────────────
-  function renderGlobalQuestProgress(containerId, data) {
-    var container = document.getElementById(containerId);
-    if (!container) return null;
-
-    var loading = container.querySelector('.chart-loading');
-    if (loading) loading.remove();
-
-    if (!data || data.length === 0) {
-      var fallback = document.createElement('div');
-      fallback.className = 'chart-error';
-      fallback.textContent = 'No hay eventos globales activos.';
-      container.appendChild(fallback);
-      return null;
-    }
-
-    for (var i = 0; i < data.length; i++) {
-      var quest = data[i];
-      var pct = computeProgressPercent(quest.current, quest.threshold);
-      var rounded = Math.round(pct);
-
-      var wrapper = document.createElement('div');
-      wrapper.className = 'mb-3';
-
-      var label = document.createElement('div');
-      label.className = 'mb-1';
-      label.textContent = quest.name;
-
-      var progressDiv = document.createElement('div');
-      progressDiv.className = 'progress';
-
-      var bar = document.createElement('div');
-      bar.className = 'progress-bar';
-      bar.style.width = rounded + '%';
-      bar.setAttribute('role', 'progressbar');
-      bar.setAttribute('aria-valuenow', String(rounded));
-      bar.setAttribute('aria-valuemin', '0');
-      bar.setAttribute('aria-valuemax', '100');
-      bar.textContent = rounded + '%';
-
-      progressDiv.appendChild(bar);
-      wrapper.appendChild(label);
-      wrapper.appendChild(progressDiv);
-      container.appendChild(wrapper);
-    }
-
-    return null;
-  }
-
   // ── 6.1 Gold inflation time-series chart ──────────────────────────────────
   function renderGoldInflationChart(id) {
     showLoading(id);
@@ -932,7 +883,6 @@
     'chartKdRatio',
     'chartFactionSummary',
     'chartFishingLeaderboard',
-    'chartQuestCompletion',
     'chartGenderDistribution',
     'chartTopNpcHunters'
   ];
@@ -1015,29 +965,8 @@
           renderBarChart('chartFishingLeaderboard', fishData);
         }
 
-        // Quest Completion — check for empty
-        var questData = data.questCompletion;
-        var questEmpty = !questData || questData.length === 0;
-        if (questEmpty) {
-          var questCanvas = document.getElementById('chartQuestCompletion');
-          if (questCanvas) {
-            var questContainer = questCanvas.parentNode;
-            var questLoading = questContainer.querySelector('.chart-loading');
-            if (questLoading) questLoading.remove();
-            var questFallback = document.createElement('div');
-            questFallback.className = 'chart-error';
-            questFallback.textContent = 'No hay datos de quests disponibles.';
-            questContainer.appendChild(questFallback);
-          }
-        } else {
-          renderColumnChart('chartQuestCompletion', questData.map(function (d) { return d.count; }), questData.map(function (d) { return d.bucket; }));
-        }
-
         // Gender Distribution
         renderPieChart('chartGenderDistribution', data.genderDistribution);
-
-        // Global Quest Progress — renderGlobalQuestProgress handles its own fallback
-        renderGlobalQuestProgress('chartGlobalQuestProgress', data.globalQuestProgress);
 
         // Top NPC Hunters — check for empty/all-zero
         var npcData = data.topNpcHunters;
@@ -1061,16 +990,6 @@
         STATIC_CHART_IDS.forEach(function (id) {
           showError(id, 'No se pudieron cargar las estadísticas.');
         });
-        // chartGlobalQuestProgress is a div, not canvas — handle separately
-        var gqContainer = document.getElementById('chartGlobalQuestProgress');
-        if (gqContainer) {
-          var gqLoading = gqContainer.querySelector('.chart-loading');
-          if (gqLoading) gqLoading.remove();
-          var gqErr = document.createElement('div');
-          gqErr.className = 'chart-error';
-          gqErr.textContent = 'No se pudieron cargar las estadísticas.';
-          gqContainer.appendChild(gqErr);
-        }
       });
   }
 
@@ -1100,7 +1019,6 @@
       renderLineChart: renderLineChart,
       renderGuildChart: renderGuildChart,
       renderFactionChart: renderFactionChart,
-      renderGlobalQuestProgress: renderGlobalQuestProgress,
       renderGoldInflationChart: renderGoldInflationChart,
       renderItemsChart: renderItemsChart,
       applyItemsFilter: applyItemsFilter,

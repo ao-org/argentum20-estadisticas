@@ -144,23 +144,9 @@ $stats = getGeneralStats();
   </div>
 
   <div class="card mb-3">
-    <div class="card-header">Completitud de Quests</div>
-    <div class="card-body">
-      <div class="chart-container"><canvas id="chartQuestCompletion"></canvas></div>
-    </div>
-  </div>
-
-  <div class="card mb-3">
     <div class="card-header">Distribución de Género</div>
     <div class="card-body">
       <div class="chart-container"><canvas id="chartGenderDistribution"></canvas></div>
-    </div>
-  </div>
-
-  <div class="card mb-3">
-    <div class="card-header">Progreso de Eventos Globales</div>
-    <div class="card-body">
-      <div id="chartGlobalQuestProgress"></div>
     </div>
   </div>
 

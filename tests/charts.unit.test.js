@@ -17,7 +17,7 @@ const {
   renderPieChart, renderColumnChart, renderBarChart, renderLineChart,
   toggleItemSelection, selectedItems, MAX_SELECTED,
   bucketValues, topN, guildAlignmentColor, computeKdRatio, computeProgressPercent,
-  renderGuildChart, renderFactionChart, renderGlobalQuestProgress, initStaticCharts
+  renderGuildChart, renderFactionChart, initStaticCharts
 } = require('../js/charts.js');
 
 // ── 3.1 Dark theme palette ─────────────────────────────────────────────────
@@ -638,72 +638,6 @@ describe('renderFactionChart', () => {
   });
 });
 
-// ── 11.4 renderGlobalQuestProgress ──────────────────────────────────────────
-describe('renderGlobalQuestProgress', () => {
-  beforeEach(() => {
-    document.body.innerHTML =
-      '<div id="parentDiv"><div id="testProgress"></div></div>';
-  });
-
-  it('generates HTML progress bars with correct percentages', () => {
-    const data = [
-      { name: 'Quest A', current: 50, threshold: 100 },
-      { name: 'Quest B', current: 75, threshold: 200 }
-    ];
-    renderGlobalQuestProgress('testProgress', data);
-    const bars = document.querySelectorAll('.progress-bar');
-    expect(bars).toHaveLength(2);
-    expect(bars[0].textContent).toBe('50%');
-    expect(bars[0].style.width).toBe('50%');
-    expect(bars[1].textContent).toBe('38%'); // Math.round(75/200*100) = 38
-    expect(bars[1].style.width).toBe('38%');
-  });
-
-  it('shows quest names as labels', () => {
-    const data = [{ name: 'Dragon Hunt', current: 10, threshold: 100 }];
-    renderGlobalQuestProgress('testProgress', data);
-    const label = document.querySelector('.mb-1');
-    expect(label.textContent).toBe('Dragon Hunt');
-  });
-
-  it('shows fallback message for empty data', () => {
-    const result = renderGlobalQuestProgress('testProgress', []);
-    expect(result).toBeNull();
-    const fallback = document.querySelector('.chart-error');
-    expect(fallback).not.toBeNull();
-    expect(fallback.textContent).toBe('No hay eventos globales activos.');
-  });
-
-  it('shows fallback message for null data', () => {
-    const result = renderGlobalQuestProgress('testProgress', null);
-    expect(result).toBeNull();
-    expect(document.querySelector('.chart-error').textContent).toBe('No hay eventos globales activos.');
-  });
-
-  it('caps percentage at 100% when current exceeds threshold', () => {
-    const data = [{ name: 'Overflow Quest', current: 200, threshold: 100 }];
-    renderGlobalQuestProgress('testProgress', data);
-    const bar = document.querySelector('.progress-bar');
-    expect(bar.textContent).toBe('100%');
-    expect(bar.style.width).toBe('100%');
-    expect(bar.getAttribute('aria-valuenow')).toBe('100');
-  });
-
-  it('sets correct ARIA attributes on progress bars', () => {
-    const data = [{ name: 'Test', current: 30, threshold: 100 }];
-    renderGlobalQuestProgress('testProgress', data);
-    const bar = document.querySelector('.progress-bar');
-    expect(bar.getAttribute('role')).toBe('progressbar');
-    expect(bar.getAttribute('aria-valuenow')).toBe('30');
-    expect(bar.getAttribute('aria-valuemin')).toBe('0');
-    expect(bar.getAttribute('aria-valuemax')).toBe('100');
-  });
-
-  it('returns null for nonexistent container', () => {
-    expect(renderGlobalQuestProgress('nonexistent', [{ name: 'A', current: 1, threshold: 10 }])).toBeNull();
-  });
-});
-
 // ── 11.5 initStaticCharts wiring — fallback messages for empty API data ─────
 describe('initStaticCharts — empty API fallback', () => {
   beforeEach(() => {
@@ -721,9 +655,7 @@ describe('initStaticCharts — empty API fallback', () => {
       <div class="chart-container"><canvas id="chartKdRatio"></canvas></div>
       <div class="chart-container"><canvas id="chartFactionSummary"></canvas></div>
       <div class="chart-container"><canvas id="chartFishingLeaderboard"></canvas></div>
-      <div class="chart-container"><canvas id="chartQuestCompletion"></canvas></div>
       <div class="chart-container"><canvas id="chartGenderDistribution"></canvas></div>
-      <div id="chartGlobalQuestProgress"></div>
       <div class="chart-container"><canvas id="chartTopNpcHunters"></canvas></div>
     `;
 
@@ -742,26 +674,21 @@ describe('initStaticCharts — empty API fallback', () => {
           kdRatioByClass: [],
           factionSummary: null,
           fishingLeaderboard: [],
-          questCompletion: [],
           genderDistribution: [],
-          globalQuestProgress: [],
           topNpcHunters: []
         })
       })
     );
   });
 
-  it('shows fallback messages for all 10 new charts when API returns empty data', async () => {
+  it('shows fallback messages for new charts when API returns empty data', async () => {
     initStaticCharts();
 
-    // Wait for fetch promise chain to resolve
     await vi.waitFor(() => {
       const errors = document.querySelectorAll('.chart-error');
-      // We expect fallback messages for all charts (existing + new)
-      expect(errors.length).toBeGreaterThanOrEqual(10);
+      expect(errors.length).toBeGreaterThanOrEqual(8);
     });
 
-    // Verify specific fallback messages for the 10 new charts
     const eloContainer = document.getElementById('chartEloDistribution').parentNode;
     expect(eloContainer.querySelector('.chart-error').textContent).toBe('No hay datos de PvP disponibles.');
 
@@ -780,14 +707,8 @@ describe('initStaticCharts — empty API fallback', () => {
     const fishContainer = document.getElementById('chartFishingLeaderboard').parentNode;
     expect(fishContainer.querySelector('.chart-error').textContent).toBe('No hay datos de pesca disponibles.');
 
-    const questContainer = document.getElementById('chartQuestCompletion').parentNode;
-    expect(questContainer.querySelector('.chart-error').textContent).toBe('No hay datos de quests disponibles.');
-
     const genderContainer = document.getElementById('chartGenderDistribution').parentNode;
     expect(genderContainer.querySelector('.chart-error').textContent).toBe('No hay datos disponibles.');
-
-    const gqContainer = document.getElementById('chartGlobalQuestProgress');
-    expect(gqContainer.querySelector('.chart-error').textContent).toBe('No hay eventos globales activos.');
 
     const npcContainer = document.getElementById('chartTopNpcHunters').parentNode;
     expect(npcContainer.querySelector('.chart-error').textContent).toBe('No hay datos de NPCs cazados disponibles.');
