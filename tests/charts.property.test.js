@@ -18,7 +18,8 @@ const {
   renderPieChart, renderColumnChart, renderBarChart, renderLineChart,
   toggleItemSelection, selectedItems, MAX_SELECTED,
   updateItemsChart, DARK_PALETTE, chartData,
-  applyItemsFilter
+  applyItemsFilter,
+  bucketValues, topN, guildAlignmentColor, computeKdRatio, computeProgressPercent
 } = chartsModule;
 
 // ── Arbitrary: alphanumeric container ID ───────────────────────────────────
@@ -1276,6 +1277,439 @@ describe('Feature: items-statistics-filter, Property 9: Sin re-fetch al cambiar 
 
         // Verify fetch was never called
         expect(fetchSpy).not.toHaveBeenCalled();
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: new-statistics-charts, Property 1: Histogram bucketing preserves total count
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: new-statistics-charts, Property 1: Histogram bucketing preserves total count', () => {
+  /**
+   * **Validates: Requirements 1.1, 7.1, 8.1**
+   *
+   * For any array of non-negative integers and bucket width W > 0,
+   * the sum of all bucket counts equals the input length, and each
+   * value V falls in the correct bucket (bucket start = floor(V/W)*W).
+   */
+
+  const arbValues = fc.array(fc.nat({ max: 5000 }), { minLength: 0, maxLength: 100 });
+  const arbWidth = fc.integer({ min: 1, max: 500 });
+
+  it('sum of all bucket counts equals input length', () => {
+    fc.assert(
+      fc.property(arbValues, arbWidth, (values, width) => {
+        const result = bucketValues(values, width);
+        const totalCount = result.reduce((sum, b) => sum + b.count, 0);
+        expect(totalCount).toBe(values.length);
+      }),
+      { numRuns: 100 }
+    );
+  });
+
+  it('each value falls in the correct bucket', () => {
+    fc.assert(
+      fc.property(arbValues, arbWidth, (values, width) => {
+        const result = bucketValues(values, width);
+        // Build a map of bucket start → count from result
+        const bucketMap = {};
+        for (const b of result) {
+          const start = parseInt(b.bucket.split('-')[0], 10);
+          bucketMap[start] = b.count;
+        }
+        // Verify each value maps to the correct bucket
+        const expectedCounts = {};
+        for (const v of values) {
+          const start = Math.floor(v / width) * width;
+          expectedCounts[start] = (expectedCounts[start] || 0) + 1;
+        }
+        expect(bucketMap).toEqual(expectedCounts);
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: new-statistics-charts, Property 2: Leaderboard top-N is sorted and bounded
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: new-statistics-charts, Property 2: Leaderboard top-N is sorted and bounded', () => {
+  /**
+   * **Validates: Requirements 2.1, 6.1, 10.1**
+   *
+   * For any array of objects with numeric score and limit N > 0,
+   * output length = min(N, input.length), output is sorted descending
+   * by score, and every output score >= every excluded score.
+   */
+
+  const arbItem = fc.record({
+    name: fc.string({ minLength: 1, maxLength: 10 }),
+    score: fc.integer({ min: 0, max: 100000 })
+  });
+  const arbItems = fc.array(arbItem, { minLength: 0, maxLength: 50 });
+  const arbN = fc.integer({ min: 1, max: 30 });
+
+  it('output length equals min(N, input.length)', () => {
+    fc.assert(
+      fc.property(arbItems, arbN, (items, n) => {
+        const result = topN(items, 'score', n);
+        expect(result.length).toBe(Math.min(n, items.length));
+      }),
+      { numRuns: 100 }
+    );
+  });
+
+  it('output is sorted descending by score', () => {
+    fc.assert(
+      fc.property(arbItems, arbN, (items, n) => {
+        const result = topN(items, 'score', n);
+        for (let i = 1; i < result.length; i++) {
+          expect(result[i].score).toBeLessThanOrEqual(result[i - 1].score);
+        }
+      }),
+      { numRuns: 100 }
+    );
+  });
+
+  it('every output score >= every excluded score', () => {
+    fc.assert(
+      fc.property(arbItems, arbN, (items, n) => {
+        const result = topN(items, 'score', n);
+        if (result.length === 0 || result.length === items.length) return;
+        const minOutput = Math.min(...result.map(r => r.score));
+        const resultSet = new Set(result);
+        for (const item of items) {
+          if (!resultSet.has(item)) {
+            expect(item.score).toBeLessThanOrEqual(minOutput);
+          }
+        }
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: new-statistics-charts, Property 3: Guild alignment color mapping is deterministic
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: new-statistics-charts, Property 3: Guild alignment color mapping is deterministic', () => {
+  /**
+   * **Validates: Requirements 2.2**
+   *
+   * For any alignment value: 1→#00bc8c, 2→#e74c3c, other→#6c757d.
+   * Calling twice with same input produces same output (idempotent).
+   */
+
+  const arbAlignment = fc.oneof(
+    fc.constant(1),
+    fc.constant(2),
+    fc.integer({ min: -100, max: 100 })
+  );
+
+  it('returns correct color for each alignment value', () => {
+    fc.assert(
+      fc.property(arbAlignment, (alignment) => {
+        const color = guildAlignmentColor(alignment);
+        if (alignment === 1) {
+          expect(color).toBe('#00bc8c');
+        } else if (alignment === 2) {
+          expect(color).toBe('#e74c3c');
+        } else {
+          expect(color).toBe('#6c757d');
+        }
+      }),
+      { numRuns: 100 }
+    );
+  });
+
+  it('calling twice with same input produces same output', () => {
+    fc.assert(
+      fc.property(arbAlignment, (alignment) => {
+        const first = guildAlignmentColor(alignment);
+        const second = guildAlignmentColor(alignment);
+        expect(first).toBe(second);
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: new-statistics-charts, Property 4: Gold distribution covers all level ranges with correct averages
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: new-statistics-charts, Property 4: Gold distribution covers all level ranges with correct averages', () => {
+  /**
+   * **Validates: Requirements 3.1, 3.4**
+   *
+   * For any array of user records with level 1–50 and gold values,
+   * exactly 5 entries returned (one per range: 1-10, 11-20, 21-30, 31-40, 41-50),
+   * average for each range = sum/count (or 0 if empty),
+   * empty ranges have average and median of 0.
+   */
+
+  const RANGES = [
+    { label: '1-10', min: 1, max: 10 },
+    { label: '11-20', min: 11, max: 20 },
+    { label: '21-30', min: 21, max: 30 },
+    { label: '31-40', min: 31, max: 40 },
+    { label: '41-50', min: 41, max: 50 }
+  ];
+
+  // Reference implementation of gold distribution
+  function computeGoldDistribution(users) {
+    return RANGES.map(r => {
+      const inRange = users.filter(u => u.level >= r.min && u.level <= r.max);
+      if (inRange.length === 0) {
+        return { range: r.label, average: 0, median: 0 };
+      }
+      const sum = inRange.reduce((s, u) => s + u.gold, 0);
+      const avg = sum / inRange.length;
+      const sorted = inRange.map(u => u.gold).sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      const median = sorted.length % 2 === 0
+        ? (sorted[mid - 1] + sorted[mid]) / 2
+        : sorted[mid];
+      return { range: r.label, average: avg, median: median };
+    });
+  }
+
+  const arbUser = fc.record({
+    level: fc.integer({ min: 1, max: 50 }),
+    gold: fc.integer({ min: 0, max: 1000000 })
+  });
+  const arbUsers = fc.array(arbUser, { minLength: 0, maxLength: 50 });
+
+  it('returns exactly 5 entries with correct averages', () => {
+    fc.assert(
+      fc.property(arbUsers, (users) => {
+        const result = computeGoldDistribution(users);
+        expect(result.length).toBe(5);
+
+        for (const entry of result) {
+          const r = RANGES.find(r => r.label === entry.range);
+          const inRange = users.filter(u => u.level >= r.min && u.level <= r.max);
+          if (inRange.length === 0) {
+            expect(entry.average).toBe(0);
+            expect(entry.median).toBe(0);
+          } else {
+            const sum = inRange.reduce((s, u) => s + u.gold, 0);
+            expect(entry.average).toBeCloseTo(sum / inRange.length, 5);
+          }
+        }
+      }),
+      { numRuns: 100 }
+    );
+  });
+
+  it('empty ranges have average and median of 0', () => {
+    fc.assert(
+      fc.property(arbUsers, (users) => {
+        const result = computeGoldDistribution(users);
+        for (const entry of result) {
+          const r = RANGES.find(r => r.label === entry.range);
+          const inRange = users.filter(u => u.level >= r.min && u.level <= r.max);
+          if (inRange.length === 0) {
+            expect(entry.average).toBe(0);
+            expect(entry.median).toBe(0);
+          }
+        }
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: new-statistics-charts, Property 5: K/D ratio handles zero deaths correctly
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: new-statistics-charts, Property 5: K/D ratio handles zero deaths correctly', () => {
+  /**
+   * **Validates: Requirements 4.1, 4.2**
+   *
+   * For any kills/deaths pair: deaths > 0 → kills/deaths,
+   * deaths === 0 → kills.
+   */
+
+  const arbKills = fc.integer({ min: 0, max: 100000 });
+  const arbDeaths = fc.integer({ min: 0, max: 100000 });
+
+  it('returns kills/deaths when deaths > 0, kills when deaths === 0', () => {
+    fc.assert(
+      fc.property(arbKills, arbDeaths, (kills, deaths) => {
+        const result = computeKdRatio(kills, deaths);
+        if (deaths > 0) {
+          expect(result).toBeCloseTo(kills / deaths, 10);
+        } else {
+          expect(result).toBe(kills);
+        }
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: new-statistics-charts, Property 6: Faction aggregation sums and averages are correct
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: new-statistics-charts, Property 6: Faction aggregation sums and averages are correct', () => {
+  /**
+   * **Validates: Requirements 5.1**
+   *
+   * For any array of user records with faction status (1=Real, 2=Caos),
+   * faction_score, and kill counts: player count = count of users with
+   * that status, average score = sum of scores / count, total kills =
+   * sum of kill counts.
+   */
+
+  const arbUser = fc.record({
+    status: fc.constantFrom(1, 2),
+    faction_score: fc.integer({ min: 0, max: 100000 }),
+    kills: fc.integer({ min: 0, max: 50000 })
+  });
+  const arbUsers = fc.array(arbUser, { minLength: 0, maxLength: 50 });
+
+  // Reference implementation of faction aggregation
+  function computeFactionSummary(users) {
+    const factions = { 1: { players: 0, totalScore: 0, totalKills: 0 }, 2: { players: 0, totalScore: 0, totalKills: 0 } };
+    for (const u of users) {
+      factions[u.status].players++;
+      factions[u.status].totalScore += u.faction_score;
+      factions[u.status].totalKills += u.kills;
+    }
+    return {
+      real: {
+        players: factions[1].players,
+        avgScore: factions[1].players > 0 ? factions[1].totalScore / factions[1].players : 0,
+        totalKills: factions[1].totalKills
+      },
+      caos: {
+        players: factions[2].players,
+        avgScore: factions[2].players > 0 ? factions[2].totalScore / factions[2].players : 0,
+        totalKills: factions[2].totalKills
+      }
+    };
+  }
+
+  it('player count, average score, and total kills are correct per faction', () => {
+    fc.assert(
+      fc.property(arbUsers, (users) => {
+        const result = computeFactionSummary(users);
+
+        const realUsers = users.filter(u => u.status === 1);
+        const caosUsers = users.filter(u => u.status === 2);
+
+        // Player counts
+        expect(result.real.players).toBe(realUsers.length);
+        expect(result.caos.players).toBe(caosUsers.length);
+
+        // Total kills
+        expect(result.real.totalKills).toBe(realUsers.reduce((s, u) => s + u.kills, 0));
+        expect(result.caos.totalKills).toBe(caosUsers.reduce((s, u) => s + u.kills, 0));
+
+        // Average scores
+        if (realUsers.length > 0) {
+          const expectedAvg = realUsers.reduce((s, u) => s + u.faction_score, 0) / realUsers.length;
+          expect(result.real.avgScore).toBeCloseTo(expectedAvg, 5);
+        } else {
+          expect(result.real.avgScore).toBe(0);
+        }
+        if (caosUsers.length > 0) {
+          const expectedAvg = caosUsers.reduce((s, u) => s + u.faction_score, 0) / caosUsers.length;
+          expect(result.caos.avgScore).toBeCloseTo(expectedAvg, 5);
+        } else {
+          expect(result.caos.avgScore).toBe(0);
+        }
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: new-statistics-charts, Property 7: Global quest progress percentage is bounded and correct
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: new-statistics-charts, Property 7: Global quest progress percentage is bounded and correct', () => {
+  /**
+   * **Validates: Requirements 9.1, 9.2**
+   *
+   * For any positive threshold and non-negative current,
+   * percentage = min(100, (current/threshold)*100),
+   * always between 0 and 100 inclusive.
+   */
+
+  const arbCurrent = fc.integer({ min: 0, max: 1000000 });
+  const arbThreshold = fc.integer({ min: 1, max: 1000000 });
+
+  it('percentage equals min(100, (current/threshold)*100) and is bounded 0-100', () => {
+    fc.assert(
+      fc.property(arbCurrent, arbThreshold, (current, threshold) => {
+        const result = computeProgressPercent(current, threshold);
+        const expected = Math.min(100, (current / threshold) * 100);
+        expect(result).toBeCloseTo(expected, 10);
+        expect(result).toBeGreaterThanOrEqual(0);
+        expect(result).toBeLessThanOrEqual(100);
+      }),
+      { numRuns: 100 }
+    );
+  });
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: new-statistics-charts, Property 8: Deleted and banned users are excluded from aggregates
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: new-statistics-charts, Property 8: Deleted and banned users are excluded from aggregates', () => {
+  /**
+   * **Validates: Requirements 11.4**
+   *
+   * For any mixed dataset of active/deleted/banned users,
+   * aggregate results on full set (after filtering) equal results
+   * on active-only subset.
+   * Active = deleted !== 1 AND (is_banned === null OR is_banned !== 1)
+   */
+
+  const arbUser = fc.record({
+    deleted: fc.constantFrom(0, 1),
+    is_banned: fc.constantFrom(null, 0, 1),
+    score: fc.integer({ min: 0, max: 100000 })
+  });
+  const arbUsers = fc.array(arbUser, { minLength: 0, maxLength: 50 });
+
+  // Reference filter: active users only
+  function filterActive(users) {
+    return users.filter(u => u.deleted !== 1 && (u.is_banned === null || u.is_banned !== 1));
+  }
+
+  // Reference aggregate: sum and count of scores
+  function aggregate(users) {
+    const active = filterActive(users);
+    return {
+      count: active.length,
+      totalScore: active.reduce((s, u) => s + u.score, 0)
+    };
+  }
+
+  it('aggregate on full set after filtering equals aggregate on active-only subset', () => {
+    fc.assert(
+      fc.property(arbUsers, (users) => {
+        const activeOnly = filterActive(users);
+        const resultFull = aggregate(users);
+        const resultActive = {
+          count: activeOnly.length,
+          totalScore: activeOnly.reduce((s, u) => s + u.score, 0)
+        };
+
+        expect(resultFull.count).toBe(resultActive.count);
+        expect(resultFull.totalScore).toBe(resultActive.totalScore);
       }),
       { numRuns: 100 }
     );

@@ -75,6 +75,50 @@
     return Object.values(byDay).sort(function (a, b) { return a.x - b.x; });
   }
 
+  // ── 4.1 Pure helper functions ──────────────────────────────────────────────
+
+  function bucketValues(values, width) {
+    var buckets = {};
+    var starts = [];
+    for (var i = 0; i < values.length; i++) {
+      var start = Math.floor(values[i] / width) * width;
+      if (!(start in buckets)) {
+        buckets[start] = 0;
+        starts.push(start);
+      }
+      buckets[start]++;
+    }
+    starts.sort(function (a, b) { return a - b; });
+    var result = [];
+    for (var j = 0; j < starts.length; j++) {
+      var s = starts[j];
+      result.push({ bucket: s + '-' + (s + width - 1), count: buckets[s] });
+    }
+    return result;
+  }
+
+  function topN(items, scoreKey, n) {
+    var copy = items.slice();
+    copy.sort(function (a, b) { return b[scoreKey] - a[scoreKey]; });
+    return copy.slice(0, n);
+  }
+
+  function guildAlignmentColor(alignment) {
+    if (alignment === 1) return '#00bc8c';
+    if (alignment === 2) return '#e74c3c';
+    return '#6c757d';
+  }
+
+  function computeKdRatio(kills, deaths) {
+    if (deaths > 0) return kills / deaths;
+    return kills;
+  }
+
+  function computeProgressPercent(current, threshold) {
+    if (threshold === 0) return 0;
+    return Math.min(100, (current / threshold) * 100);
+  }
+
   // ── 5.1 Pie chart — users by class ────────────────────────────────────────
   function renderPieChart(id, data) {
     var canvas = document.getElementById(id);
@@ -306,6 +350,177 @@
         }
       }
     });
+  }
+
+  // ── 5.5 Guild chart — horizontal bar with alignment colors ────────────────
+  function renderGuildChart(id, data) {
+    var canvas = document.getElementById(id);
+    if (!canvas) return null;
+    var container = canvas.parentNode;
+
+    var loading = container.querySelector('.chart-loading');
+    if (loading) loading.remove();
+
+    if (!data || data.length === 0) {
+      var fallback = document.createElement('div');
+      fallback.className = 'chart-error';
+      fallback.textContent = 'No hay datos de guilds disponibles.';
+      container.appendChild(fallback);
+      return null;
+    }
+
+    return new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: data.map(function (d) { return d.name; }),
+        datasets: [{
+          label: 'Miembros',
+          data: data.map(function (d) { return d.members; }),
+          backgroundColor: data.map(function (d) { return guildAlignmentColor(d.alignment); })
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            beginAtZero: true,
+            grid: { color: 'rgba(255,255,255,0.1)' },
+            ticks: { color: '#e0e0e0' }
+          },
+          y: {
+            grid: { color: 'rgba(255,255,255,0.1)' },
+            ticks: { color: '#e0e0e0' }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) {
+                var item = data[ctx.dataIndex];
+                return item.name + ' - Nivel ' + item.level + ', ' + item.members + ' miembros';
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // ── 5.6 Faction chart — grouped bar Real vs Caos ─────────────────────────
+  function renderFactionChart(id, data) {
+    var canvas = document.getElementById(id);
+    if (!canvas) return null;
+    var container = canvas.parentNode;
+
+    var loading = container.querySelector('.chart-loading');
+    if (loading) loading.remove();
+
+    if (!data || (!data.real && !data.caos)) {
+      var fallback = document.createElement('div');
+      fallback.className = 'chart-error';
+      fallback.textContent = 'No hay datos de facciones disponibles.';
+      container.appendChild(fallback);
+      return null;
+    }
+
+    var real = data.real || { players: 0, avgScore: 0, totalKills: 0 };
+    var caos = data.caos || { players: 0, avgScore: 0, totalKills: 0 };
+
+    return new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: ['Jugadores', 'Puntaje Promedio', 'Kills Totales'],
+        datasets: [
+          {
+            label: 'Real',
+            data: [real.players, real.avgScore, real.totalKills],
+            backgroundColor: '#00bc8c'
+          },
+          {
+            label: 'Caos',
+            data: [caos.players, caos.avgScore, caos.totalKills],
+            backgroundColor: '#e74c3c'
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            grid: { color: 'rgba(255,255,255,0.1)' },
+            ticks: { color: '#e0e0e0' }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(255,255,255,0.1)' },
+            ticks: { color: '#e0e0e0' }
+          }
+        },
+        plugins: {
+          legend: {
+            display: true,
+            labels: { color: '#e0e0e0' }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false
+          }
+        }
+      }
+    });
+  }
+
+  // ── 5.7 Global quest progress — HTML progress bars ───────────────────────
+  function renderGlobalQuestProgress(containerId, data) {
+    var container = document.getElementById(containerId);
+    if (!container) return null;
+
+    var loading = container.querySelector('.chart-loading');
+    if (loading) loading.remove();
+
+    if (!data || data.length === 0) {
+      var fallback = document.createElement('div');
+      fallback.className = 'chart-error';
+      fallback.textContent = 'No hay eventos globales activos.';
+      container.appendChild(fallback);
+      return null;
+    }
+
+    for (var i = 0; i < data.length; i++) {
+      var quest = data[i];
+      var pct = computeProgressPercent(quest.current, quest.threshold);
+      var rounded = Math.round(pct);
+
+      var wrapper = document.createElement('div');
+      wrapper.className = 'mb-3';
+
+      var label = document.createElement('div');
+      label.className = 'mb-1';
+      label.textContent = quest.name;
+
+      var progressDiv = document.createElement('div');
+      progressDiv.className = 'progress';
+
+      var bar = document.createElement('div');
+      bar.className = 'progress-bar';
+      bar.style.width = rounded + '%';
+      bar.setAttribute('role', 'progressbar');
+      bar.setAttribute('aria-valuenow', String(rounded));
+      bar.setAttribute('aria-valuemin', '0');
+      bar.setAttribute('aria-valuemax', '100');
+      bar.textContent = rounded + '%';
+
+      progressDiv.appendChild(bar);
+      wrapper.appendChild(label);
+      wrapper.appendChild(progressDiv);
+      container.appendChild(wrapper);
+    }
+
+    return null;
   }
 
   // ── 6.1 Gold inflation time-series chart ──────────────────────────────────
@@ -711,7 +926,16 @@
     'chartClasesPorRaza',
     'chartUsuariosMatadosPorClase',
     'chartUsuariosPorLevel',
-    'chartUsuariosOnlinePorHora'
+    'chartUsuariosOnlinePorHora',
+    'chartEloDistribution',
+    'chartTopGuilds',
+    'chartGoldByLevel',
+    'chartKdRatio',
+    'chartFactionSummary',
+    'chartFishingLeaderboard',
+    'chartQuestCompletion',
+    'chartGenderDistribution',
+    'chartTopNpcHunters'
   ];
 
   var CLASS_CATEGORIES = [
@@ -740,11 +964,121 @@
         renderBarChart('chartUsuariosMatadosPorClase', data.killsPorClase);
         renderLineChart('chartUsuariosPorLevel', data.usuariosPorLevel);
         renderColumnChart('chartUsuariosOnlinePorHora', data.onlinePorHora, hourCategories);
+
+        // ── New charts ──
+
+        // ELO Distribution — check if all counts are zero
+        var eloData = data.eloDistribution;
+        var eloAllZero = !eloData || eloData.length === 0 || eloData.every(function (d) { return d.count === 0; });
+        if (eloAllZero) {
+          var eloCanvas = document.getElementById('chartEloDistribution');
+          if (eloCanvas) {
+            var eloContainer = eloCanvas.parentNode;
+            var eloLoading = eloContainer.querySelector('.chart-loading');
+            if (eloLoading) eloLoading.remove();
+            var eloFallback = document.createElement('div');
+            eloFallback.className = 'chart-error';
+            eloFallback.textContent = 'No hay datos de PvP disponibles.';
+            eloContainer.appendChild(eloFallback);
+          }
+        } else {
+          renderColumnChart('chartEloDistribution', eloData.map(function (d) { return d.count; }), eloData.map(function (d) { return d.bucket; }));
+        }
+
+        // Top Guilds — renderGuildChart handles its own fallback
+        renderGuildChart('chartTopGuilds', data.topGuilds);
+
+        // Gold by Level Range — grouped column with 2 series
+        var goldData = data.goldByLevelRange;
+        if (goldData && goldData.length > 0) {
+          var averages = goldData.map(function (d) { return d.average; });
+          var medians = goldData.map(function (d) { return d.median; });
+          var rangeLabels = goldData.map(function (d) { return d.range; });
+          renderColumnChart('chartGoldByLevel', [{ name: 'Promedio', data: averages }, { name: 'Mediana', data: medians }], rangeLabels);
+        } else {
+          renderColumnChart('chartGoldByLevel', [], []);
+        }
+
+        // K/D Ratio by Class
+        renderBarChart('chartKdRatio', data.kdRatioByClass);
+
+        // Faction Summary — renderFactionChart handles its own fallback
+        renderFactionChart('chartFactionSummary', data.factionSummary);
+
+        // Fishing Leaderboard — check for empty/all-zero
+        var fishData = data.fishingLeaderboard;
+        var fishEmpty = !fishData || fishData.length === 0 || fishData.every(function (d) { return d.y === 0; });
+        if (fishEmpty) {
+          var fishCanvas = document.getElementById('chartFishingLeaderboard');
+          if (fishCanvas) {
+            var fishContainer = fishCanvas.parentNode;
+            var fishLoading = fishContainer.querySelector('.chart-loading');
+            if (fishLoading) fishLoading.remove();
+            var fishFallback = document.createElement('div');
+            fishFallback.className = 'chart-error';
+            fishFallback.textContent = 'No hay datos de pesca disponibles.';
+            fishContainer.appendChild(fishFallback);
+          }
+        } else {
+          renderBarChart('chartFishingLeaderboard', fishData);
+        }
+
+        // Quest Completion — check for empty
+        var questData = data.questCompletion;
+        var questEmpty = !questData || questData.length === 0;
+        if (questEmpty) {
+          var questCanvas = document.getElementById('chartQuestCompletion');
+          if (questCanvas) {
+            var questContainer = questCanvas.parentNode;
+            var questLoading = questContainer.querySelector('.chart-loading');
+            if (questLoading) questLoading.remove();
+            var questFallback = document.createElement('div');
+            questFallback.className = 'chart-error';
+            questFallback.textContent = 'No hay datos de quests disponibles.';
+            questContainer.appendChild(questFallback);
+          }
+        } else {
+          renderColumnChart('chartQuestCompletion', questData.map(function (d) { return d.count; }), questData.map(function (d) { return d.bucket; }));
+        }
+
+        // Gender Distribution
+        renderPieChart('chartGenderDistribution', data.genderDistribution);
+
+        // Global Quest Progress — renderGlobalQuestProgress handles its own fallback
+        renderGlobalQuestProgress('chartGlobalQuestProgress', data.globalQuestProgress);
+
+        // Top NPC Hunters — check for empty/all-zero
+        var npcData = data.topNpcHunters;
+        var npcEmpty = !npcData || npcData.length === 0 || npcData.every(function (d) { return d.y === 0; });
+        if (npcEmpty) {
+          var npcCanvas = document.getElementById('chartTopNpcHunters');
+          if (npcCanvas) {
+            var npcContainer = npcCanvas.parentNode;
+            var npcLoading = npcContainer.querySelector('.chart-loading');
+            if (npcLoading) npcLoading.remove();
+            var npcFallback = document.createElement('div');
+            npcFallback.className = 'chart-error';
+            npcFallback.textContent = 'No hay datos de NPCs cazados disponibles.';
+            npcContainer.appendChild(npcFallback);
+          }
+        } else {
+          renderBarChart('chartTopNpcHunters', npcData);
+        }
       })
       .catch(function () {
         STATIC_CHART_IDS.forEach(function (id) {
           showError(id, 'No se pudieron cargar las estadísticas.');
         });
+        // chartGlobalQuestProgress is a div, not canvas — handle separately
+        var gqContainer = document.getElementById('chartGlobalQuestProgress');
+        if (gqContainer) {
+          var gqLoading = gqContainer.querySelector('.chart-loading');
+          if (gqLoading) gqLoading.remove();
+          var gqErr = document.createElement('div');
+          gqErr.className = 'chart-error';
+          gqErr.textContent = 'No se pudieron cargar las estadísticas.';
+          gqContainer.appendChild(gqErr);
+        }
       });
   }
 
@@ -760,6 +1094,11 @@
     module.exports = {
       normalizeStr: normalizeStr,
       downsampleDaily: downsampleDaily,
+      bucketValues: bucketValues,
+      topN: topN,
+      guildAlignmentColor: guildAlignmentColor,
+      computeKdRatio: computeKdRatio,
+      computeProgressPercent: computeProgressPercent,
       showLoading: showLoading,
       showError: showError,
       DARK_PALETTE: DARK_PALETTE,
@@ -767,6 +1106,9 @@
       renderColumnChart: renderColumnChart,
       renderBarChart: renderBarChart,
       renderLineChart: renderLineChart,
+      renderGuildChart: renderGuildChart,
+      renderFactionChart: renderFactionChart,
+      renderGlobalQuestProgress: renderGlobalQuestProgress,
       renderGoldInflationChart: renderGoldInflationChart,
       renderItemsChart: renderItemsChart,
       applyItemsFilter: applyItemsFilter,

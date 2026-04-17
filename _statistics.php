@@ -300,3 +300,350 @@ SQL;
 
     return $result;
 }
+
+function getEloDistribution()
+{
+    $query = <<<SQL
+        SELECT FLOOR(elo / 100) AS bucket_start, COUNT(*) AS count
+        FROM user
+        WHERE deleted <> 1
+            AND guild_index <> 1
+            AND (is_banned IS NULL OR is_banned <> 1)
+        GROUP BY bucket_start
+        ORDER BY bucket_start ASC;
+SQL;
+
+    $rows = executeGetMultipleRowsQuery($query);
+
+    $result = array();
+    foreach ($rows as $row) {
+        $start = intval($row['bucket_start']) * 100;
+        $end = $start + 99;
+        $result[] = array(
+            'bucket' => $start . '-' . $end,
+            'count'  => intval($row['count'])
+        );
+    }
+
+    return $result;
+}
+
+function getGenderDistribution()
+{
+    $genderNames = array(
+        1 => 'Masculino',
+        2 => 'Femenino',
+    );
+
+    $query = <<<SQL
+        SELECT genre_id, COUNT(*) AS count
+        FROM user
+        WHERE deleted <> 1
+            AND guild_index <> 1
+            AND (is_banned IS NULL OR is_banned <> 1)
+        GROUP BY genre_id;
+SQL;
+
+    $rows = executeGetMultipleRowsQuery($query);
+
+    $result = array();
+    foreach ($rows as $row) {
+        $genreId = intval($row['genre_id']);
+        $name = isset($genderNames[$genreId]) ? $genderNames[$genreId] : 'Otro';
+        $result[] = array(
+            'name' => $name,
+            'y'    => intval($row['count'])
+        );
+    }
+
+    return $result;
+}
+
+function getKdRatioByClass()
+{
+    $query = <<<SQL
+        SELECT class_id,
+            AVG(
+                CASE WHEN deaths = 0
+                    THEN (ciudadanos_matados + criminales_matados)
+                    ELSE (ciudadanos_matados + criminales_matados) / deaths
+                END
+            ) AS avg_kd
+        FROM user
+        WHERE deleted <> 1
+            AND guild_index <> 1
+            AND (is_banned IS NULL OR is_banned <> 1)
+        GROUP BY class_id
+        ORDER BY avg_kd DESC;
+SQL;
+
+    $rows = executeGetMultipleRowsQuery($query);
+
+    $result = array();
+    foreach ($rows as $row) {
+        $result[] = array(
+            'name' => getClase($row['class_id']),
+            'y'    => round(floatval($row['avg_kd']), 2)
+        );
+    }
+
+    return $result;
+}
+
+function getGoldByLevelRange()
+{
+    $ranges = array(
+        array('min' => 1,  'max' => 10,  'label' => '1-10'),
+        array('min' => 11, 'max' => 20,  'label' => '11-20'),
+        array('min' => 21, 'max' => 30,  'label' => '21-30'),
+        array('min' => 31, 'max' => 40,  'label' => '31-40'),
+        array('min' => 41, 'max' => 50,  'label' => '41-50'),
+    );
+
+    $result = array();
+
+    foreach ($ranges as $range) {
+        $min = $range['min'];
+        $max = $range['max'];
+
+        // Get average
+        $avgQuery = <<<SQL
+            SELECT AVG(gold + bank_gold) AS avg_gold
+            FROM user
+            WHERE deleted <> 1
+                AND guild_index <> 1
+                AND (is_banned IS NULL OR is_banned <> 1)
+                AND level >= {$min}
+                AND level <= {$max};
+SQL;
+
+        $avgRow = executeGetMultipleRowsQuery($avgQuery);
+        $average = (!empty($avgRow) && $avgRow[0]['avg_gold'] !== null)
+            ? round(floatval($avgRow[0]['avg_gold']), 2)
+            : 0;
+
+        // Get all gold values for median calculation
+        $allQuery = <<<SQL
+            SELECT (gold + bank_gold) AS total_gold
+            FROM user
+            WHERE deleted <> 1
+                AND guild_index <> 1
+                AND (is_banned IS NULL OR is_banned <> 1)
+                AND level >= {$min}
+                AND level <= {$max}
+            ORDER BY total_gold ASC;
+SQL;
+
+        $allRows = executeGetMultipleRowsQuery($allQuery);
+        $median = 0;
+
+        if (!empty($allRows)) {
+            $values = array();
+            foreach ($allRows as $r) {
+                $values[] = floatval($r['total_gold']);
+            }
+            $count = count($values);
+            $mid = intdiv($count, 2);
+            if ($count % 2 === 0) {
+                $median = round(($values[$mid - 1] + $values[$mid]) / 2, 2);
+            } else {
+                $median = round($values[$mid], 2);
+            }
+        }
+
+        $result[] = array(
+            'range'   => $range['label'],
+            'average' => $average,
+            'median'  => $median,
+        );
+    }
+
+    return $result;
+}
+
+function getTopGuilds()
+{
+    $query = <<<SQL
+        SELECT g.guild_name, g.level, g.alignment, COUNT(gm.user_id) AS member_count
+        FROM guilds g
+        JOIN guild_members gm ON g.id = gm.guild_id
+        GROUP BY g.id
+        ORDER BY member_count DESC
+        LIMIT 20;
+SQL;
+
+    $rows = executeGetMultipleRowsQuery($query);
+
+    $result = array();
+    foreach ($rows as $row) {
+        $result[] = array(
+            'name'      => $row['guild_name'],
+            'members'   => intval($row['member_count']),
+            'level'     => intval($row['level']),
+            'alignment' => intval($row['alignment']),
+        );
+    }
+
+    return $result;
+}
+
+function getFactionSummary()
+{
+    $queryReal = <<<SQL
+        SELECT COUNT(*) AS players,
+               AVG(faction_score) AS avg_score,
+               SUM(criminales_matados) AS total_kills
+        FROM user
+        WHERE deleted <> 1
+            AND guild_index <> 1
+            AND (is_banned IS NULL OR is_banned <> 1)
+            AND status = 1;
+SQL;
+
+    $queryCaos = <<<SQL
+        SELECT COUNT(*) AS players,
+               AVG(faction_score) AS avg_score,
+               SUM(ciudadanos_matados) AS total_kills
+        FROM user
+        WHERE deleted <> 1
+            AND guild_index <> 1
+            AND (is_banned IS NULL OR is_banned <> 1)
+            AND status = 2;
+SQL;
+
+    $realRow = executeGetQuery($queryReal);
+    $caosRow = executeGetQuery($queryCaos);
+
+    return array(
+        'real' => array(
+            'players'    => intval($realRow['players'] ?? 0),
+            'avgScore'   => round(floatval($realRow['avg_score'] ?? 0), 1),
+            'totalKills' => intval($realRow['total_kills'] ?? 0),
+        ),
+        'caos' => array(
+            'players'    => intval($caosRow['players'] ?? 0),
+            'avgScore'   => round(floatval($caosRow['avg_score'] ?? 0), 1),
+            'totalKills' => intval($caosRow['total_kills'] ?? 0),
+        ),
+    );
+}
+
+function getFishingLeaderboard()
+{
+    $query = <<<SQL
+        SELECT character_name, class_id, puntos_pesca
+        FROM ranking_users
+        WHERE puntos_pesca > 0
+        ORDER BY puntos_pesca DESC
+        LIMIT 20;
+SQL;
+
+    $rows = executeGetMultipleRowsQuery($query);
+
+    $result = array();
+    foreach ($rows as $row) {
+        $result[] = array(
+            'name'  => $row['character_name'],
+            'class' => getClase($row['class_id']),
+            'y'     => intval($row['puntos_pesca']),
+        );
+    }
+
+    return $result;
+}
+
+function getTopNpcHunters()
+{
+    $query = <<<SQL
+        SELECT character_name, class_id, killed_npcs
+        FROM ranking_users
+        WHERE killed_npcs > 0
+        ORDER BY killed_npcs DESC
+        LIMIT 20;
+SQL;
+
+    $rows = executeGetMultipleRowsQuery($query);
+
+    $result = array();
+    foreach ($rows as $row) {
+        $result[] = array(
+            'name'  => $row['character_name'],
+            'class' => getClase($row['class_id']),
+            'y'     => intval($row['killed_npcs']),
+        );
+    }
+
+    return $result;
+}
+
+function getQuestCompletion()
+{
+    $query = <<<SQL
+        SELECT
+            CASE
+                WHEN quest_count = 0 THEN '0'
+                WHEN quest_count BETWEEN 1 AND 5 THEN '1-5'
+                WHEN quest_count BETWEEN 6 AND 10 THEN '6-10'
+                WHEN quest_count BETWEEN 11 AND 20 THEN '11-20'
+                ELSE '21+'
+            END AS bucket,
+            COUNT(*) AS count
+        FROM (
+            SELECT u.id, COALESCE(qd.quest_count, 0) AS quest_count
+            FROM user u
+            LEFT JOIN (
+                SELECT user_id, COUNT(*) AS quest_count
+                FROM quest_done
+                GROUP BY user_id
+            ) qd ON u.id = qd.user_id
+            WHERE u.deleted <> 1
+                AND u.guild_index <> 1
+                AND (u.is_banned IS NULL OR u.is_banned <> 1)
+        ) AS user_quests
+        GROUP BY bucket;
+SQL;
+
+    $rows = executeGetMultipleRowsQuery($query);
+
+    // Ensure all 5 buckets are always present, even if count is 0
+    $buckets = array('0' => 0, '1-5' => 0, '6-10' => 0, '11-20' => 0, '21+' => 0);
+
+    foreach ($rows as $row) {
+        $buckets[$row['bucket']] = intval($row['count']);
+    }
+
+    $result = array();
+    foreach ($buckets as $bucket => $count) {
+        $result[] = array(
+            'bucket' => $bucket,
+            'count'  => $count,
+        );
+    }
+
+    return $result;
+}
+
+function getGlobalQuestProgress()
+{
+    $query = <<<SQL
+        SELECT gqd.name, gqd.threshold,
+               COALESCE(SUM(gquc.amount), 0) AS current_total
+        FROM global_quest_desc gqd
+        LEFT JOIN global_quest_user_contribution gquc ON gqd.event_id = gquc.event_id
+        WHERE gqd.is_active = 1
+        GROUP BY gqd.id;
+SQL;
+
+    $rows = executeGetMultipleRowsQuery($query);
+
+    $result = array();
+    foreach ($rows as $row) {
+        $result[] = array(
+            'name'      => $row['name'],
+            'current'   => intval($row['current_total']),
+            'threshold' => intval($row['threshold']),
+        );
+    }
+
+    return $result;
+}

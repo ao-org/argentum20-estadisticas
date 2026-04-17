@@ -108,6 +108,76 @@ $stats = getGeneralStats();
     </div>
   </div>
 
+  <div class="card mb-3">
+    <div class="card-header">Distribución de ELO</div>
+    <div class="card-body">
+      <div class="chart-container"><canvas id="chartEloDistribution"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">Top Guilds</div>
+    <div class="card-body">
+      <div class="chart-container"><canvas id="chartTopGuilds"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">Distribución de Oro por Nivel</div>
+    <div class="card-body">
+      <div class="chart-container"><canvas id="chartGoldByLevel"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">Ratio K/D por Clase</div>
+    <div class="card-body">
+      <div class="chart-container"><canvas id="chartKdRatio"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">Resumen de Facciones</div>
+    <div class="card-body">
+      <div class="chart-container"><canvas id="chartFactionSummary"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">Leaderboard de Pesca</div>
+    <div class="card-body">
+      <div class="chart-container"><canvas id="chartFishingLeaderboard"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">Completitud de Quests</div>
+    <div class="card-body">
+      <div class="chart-container"><canvas id="chartQuestCompletion"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">Distribución de Género</div>
+    <div class="card-body">
+      <div class="chart-container"><canvas id="chartGenderDistribution"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">Progreso de Eventos Globales</div>
+    <div class="card-body">
+      <div id="chartGlobalQuestProgress"></div>
+    </div>
+  </div>
+
+  <div class="card mb-3">
+    <div class="card-header">Top Cazadores de NPCs</div>
+    <div class="card-body">
+      <div class="chart-container"><canvas id="chartTopNpcHunters"></canvas></div>
+    </div>
+  </div>
+
   <iframe src="https://steamdb.info/embed/?appid=1956740" height="389" style="border:0;overflow:hidden;width:100%" loading="lazy"></iframe>
 
   <!-- Chart.js -->

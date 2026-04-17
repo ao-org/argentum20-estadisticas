@@ -192,4 +192,40 @@ FROM `user` `u`
 WHERE `u`.`deleted` <> 1
   AND (`u`.`is_banned` IS NULL OR `u`.`is_banned` <> 1);
 
+-- --------------------------------------------------------
+-- Table: quest_done
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `quest_done` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `quest_id` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+-- Table: global_quest_desc
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `global_quest_desc` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) COLLATE utf8mb4_general_ci NOT NULL,
+  `threshold` int NOT NULL,
+  `is_active` tinyint NOT NULL DEFAULT '0',
+  `event_id` int NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+-- Table: global_quest_user_contribution
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `global_quest_user_contribution` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `event_id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `amount` int NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `event_id` (`event_id`),
+  KEY `user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 SET foreign_key_checks = 1;
