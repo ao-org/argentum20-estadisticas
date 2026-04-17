@@ -278,29 +278,6 @@ SQL;
     return $result;
 }
 
-function getUsuariosOnlinePorHora()
-{
-    $query = <<<SQL
-        SELECT HOUR(date) as hora, AVG(number) as users
-        FROM statistics_users_online
-        GROUP BY HOUR(date);
-SQL;
-
-    $usuariosPorHora = executeGetMultipleRowsQuery($query);
-
-    $result = array();
-
-    for ($i = 0; $i <= 23; $i++) {
-        $result[] = 0;
-    }
-
-    foreach ($usuariosPorHora as $entry) {
-        $result[$entry['hora']] = floatval($entry['users']);
-    }
-
-    return $result;
-}
-
 function getEloDistribution()
 {
     $query = <<<SQL

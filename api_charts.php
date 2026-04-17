@@ -8,7 +8,6 @@ echo json_encode([
     'clasesPorRaza'      => getClasesPorRaza(),
     'usuariosPorLevel'   => getUsuariosPorLevel(),
     'killsPorClase'      => getKillsPorClase(),
-    'onlinePorHora'      => getUsuariosOnlinePorHora(),
     'eloDistribution'    => getEloDistribution(),
     'topGuilds'          => getTopGuilds(),
     'goldByLevelRange'   => getGoldByLevelRange(),

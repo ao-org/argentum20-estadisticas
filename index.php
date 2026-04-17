@@ -80,13 +80,6 @@ $stats = getGeneralStats();
   </div>
 
   <div class="card mb-3">
-    <div class="card-header">Usuarios online por hora</div>
-    <div class="card-body">
-      <div class="chart-container"><canvas id="chartUsuariosOnlinePorHora"></canvas></div>
-    </div>
-  </div>
-
-  <div class="card mb-3">
     <div class="card-header">Inflacion de Oro</div>
     <div class="card-body">
       <div class="chart-container"><canvas id="goldInflation"></canvas></div>

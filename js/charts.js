@@ -926,7 +926,6 @@
     'chartClasesPorRaza',
     'chartUsuariosMatadosPorClase',
     'chartUsuariosPorLevel',
-    'chartUsuariosOnlinePorHora',
     'chartEloDistribution',
     'chartTopGuilds',
     'chartGoldByLevel',
@@ -953,17 +952,10 @@
         return response.json();
       })
       .then(function (data) {
-        // Generate hour categories ['00:00', '01:00', ..., '23:00']
-        var hourCategories = [];
-        for (var h = 0; h < 24; h++) {
-          hourCategories.push((h < 10 ? '0' : '') + h + ':00');
-        }
-
         renderPieChart('chartUsuariosPorClase', data.usuariosPorClase);
         renderColumnChart('chartClasesPorRaza', data.clasesPorRaza, CLASS_CATEGORIES);
         renderBarChart('chartUsuariosMatadosPorClase', data.killsPorClase);
         renderLineChart('chartUsuariosPorLevel', data.usuariosPorLevel);
-        renderColumnChart('chartUsuariosOnlinePorHora', data.onlinePorHora, hourCategories);
 
         // ── New charts ──
 

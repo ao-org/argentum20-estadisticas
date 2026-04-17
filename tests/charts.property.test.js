@@ -168,8 +168,7 @@ describe('Feature: chartjs-migration, Property 2: Fetch failure shows error mess
             'chartUsuariosPorClase',
             'chartClasesPorRaza',
             'chartUsuariosMatadosPorClase',
-            'chartUsuariosPorLevel',
-            'chartUsuariosOnlinePorHora'
+            'chartUsuariosPorLevel'
           ].map(id =>
             '<div class="chart-container"><canvas id="' + id + '"></canvas></div>'
           ).join('');
@@ -182,7 +181,7 @@ describe('Feature: chartjs-migration, Property 2: Fetch failure shows error mess
           await flushPromises();
 
           const errors = document.querySelectorAll('.chart-error');
-          expect(errors.length).toBe(5);
+          expect(errors.length).toBe(4);
           errors.forEach(el => {
             expect(el.textContent).toBe('No se pudieron cargar las estadísticas.');
           });

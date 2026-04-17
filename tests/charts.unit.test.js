@@ -715,7 +715,6 @@ describe('initStaticCharts — empty API fallback', () => {
       <div class="chart-container"><canvas id="chartClasesPorRaza"></canvas></div>
       <div class="chart-container"><canvas id="chartUsuariosMatadosPorClase"></canvas></div>
       <div class="chart-container"><canvas id="chartUsuariosPorLevel"></canvas></div>
-      <div class="chart-container"><canvas id="chartUsuariosOnlinePorHora"></canvas></div>
       <div class="chart-container"><canvas id="chartEloDistribution"></canvas></div>
       <div class="chart-container"><canvas id="chartTopGuilds"></canvas></div>
       <div class="chart-container"><canvas id="chartGoldByLevel"></canvas></div>
@@ -737,7 +736,6 @@ describe('initStaticCharts — empty API fallback', () => {
           clasesPorRaza: [],
           killsPorClase: [],
           usuariosPorLevel: [],
-          onlinePorHora: [],
           eloDistribution: [],
           topGuilds: [],
           goldByLevelRange: [],
