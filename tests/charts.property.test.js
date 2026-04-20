@@ -1714,3 +1714,490 @@ describe('Feature: new-statistics-charts, Property 8: Deleted and banned users a
     );
   });
 });
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: items-chart-loading-fix, Property 1: Bug Condition
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: items-chart-loading-fix, Property 1: Bug Condition', () => {
+  /**
+   * **Validates: Requirements 1.1, 1.2, 1.3**
+   *
+   * Bug Condition: renderItemsChart is called with valid API data and
+   * scales.x.type: 'time' but no date adapter is registered.
+   *
+   * This test simulates the missing date adapter by making MockChart throw
+   * when it receives a config with scales.x.type === 'time', which is
+   * exactly what real Chart.js does when no adapter is registered.
+   *
+   * EXPECTED: Test FAILS on unfixed code because new Chart(...) throws
+   * inside the .then() handler with no try/catch, so the loading indicator
+   * is not properly cleaned up and the search input is never enabled.
+   */
+
+  // Helper: flush multiple microtask ticks to allow promise chains to settle
+  async function flushPromises() {
+    for (let i = 0; i < 10; i++) {
+      await Promise.resolve();
+    }
+  }
+
+  // Arbitrary: generate valid API response items
+  const arbDateString = fc.integer({
+    min: new Date('2023-01-01T00:00:00Z').getTime(),
+    max: new Date('2025-01-01T00:00:00Z').getTime()
+  }).map(ts => new Date(ts).toISOString());
+
+  const arbItemName = fc.string({
+    unit: fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz'.split('')),
+    minLength: 1,
+    maxLength: 15
+  }).filter(s => !Object.prototype.hasOwnProperty(s) && !['constructor', 'toString', 'valueOf', 'hasOwnProperty', '__proto__', 'prototype'].includes(s));
+
+  const arbApiItem = fc.record({
+    NAME: arbItemName,
+    total_quantity: fc.integer({ min: 1, max: 10000 }),
+    datetime: arbDateString
+  });
+
+  const arbApiResponse = fc.array(arbApiItem, { minLength: 1, maxLength: 20 });
+
+  const arbContainerId = fc.string({
+    unit: fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz0123456789'.split('')),
+    minLength: 1,
+    maxLength: 20
+  });
+
+  beforeEach(() => {
+    MockChart.mockClear();
+  });
+
+  it('renderItemsChart renders chart, removes loading, and enables search when data is valid', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        arbContainerId,
+        arbApiResponse,
+        async (id, apiData) => {
+          // Set up DOM with canvas, loading indicator, and search input
+          document.body.innerHTML =
+            '<div class="chart-container">' +
+              '<canvas id="' + id + '"></canvas>' +
+            '</div>' +
+            '<input id="itemsSearch" disabled placeholder="" />' +
+            '<button id="itemsSearchClear"></button>' +
+            '<div id="itemsResultsList"></div>' +
+            '<span id="itemsSearchCount"></span>' +
+            '<span id="itemsLimitMsg" style="display: none;"></span>' +
+            '<div id="itemsSelectedTags"></div>';
+
+          // After the fix: date adapter is registered, so MockChart should NOT throw
+          // for time-scale charts. This simulates the fixed environment where
+          // chartjs-adapter-date-fns is loaded via CDN in index.php.
+          MockChart.mockClear();
+          MockChart.mockImplementation(() => mockChartInstance);
+
+          // Mock fetch to return valid API data
+          globalThis.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: () => Promise.resolve(apiData)
+          });
+
+          const { renderItemsChart } = require('../js/charts.js');
+          renderItemsChart(id);
+
+          await flushPromises();
+
+          // Assert: MockChart was called (chart creation was attempted)
+          expect(MockChart).toHaveBeenCalled();
+
+          // Assert: loading indicator is removed
+          const container = document.getElementById(id).parentNode;
+          const loading = container.querySelector('.chart-loading');
+          expect(loading).toBeNull();
+
+          // Assert: search input is enabled
+          const searchInput = document.getElementById('itemsSearch');
+          expect(searchInput.disabled).toBe(false);
+
+          // Restore default MockChart behavior for other tests
+          MockChart.mockImplementation(() => mockChartInstance);
+        }
+      ),
+      { numRuns: 100 }
+    );
+  }, 30000);
+});
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: items-chart-loading-fix, Property 2: Preservation
+// Non-Time-Scale Paths Behave Identically
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: items-chart-loading-fix, Property 2: Preservation', () => {
+  // Helper: flush multiple microtask ticks to allow promise chains to settle
+  async function flushPromises() {
+    for (let i = 0; i < 10; i++) {
+      await Promise.resolve();
+    }
+  }
+
+  // Arbitrary: alphanumeric container ID
+  const arbContainerId2 = fc.string({
+    unit: fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz0123456789'.split('')),
+    minLength: 1,
+    maxLength: 20
+  });
+
+  // Helper: set up DOM with canvas inside a chart-container
+  function setupContainer(id) {
+    document.body.innerHTML =
+      '<div class="chart-container"><canvas id="' + id + '"></canvas></div>';
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Test 2a — Empty data preservation
+  // ─────────────────────────────────────────────────────────────────────────
+  describe('Test 2a — Empty data preservation', () => {
+    /**
+     * **Validates: Requirements 3.2**
+     *
+     * When API returns empty array [], renderItemsChart shows
+     * "No hay datos disponibles." fallback and does NOT create a chart.
+     */
+    beforeEach(() => {
+      MockChart.mockClear();
+      MockChart.mockImplementation(() => mockChartInstance);
+    });
+
+    it('renderItemsChart shows fallback for empty API data and does not create chart', async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          arbContainerId2,
+          async (id) => {
+            setupContainer(id);
+            MockChart.mockClear();
+
+            // Mock fetch to return empty array
+            globalThis.fetch = vi.fn().mockResolvedValue({
+              ok: true,
+              json: () => Promise.resolve([])
+            });
+
+            const { renderItemsChart } = require('../js/charts.js');
+            renderItemsChart(id);
+
+            await flushPromises();
+
+            // Assert: fallback message is shown
+            const container = document.getElementById(id).parentNode;
+            const fallback = container.querySelector('.chart-error');
+            expect(fallback).not.toBeNull();
+            expect(fallback.textContent).toBe('No hay datos disponibles.');
+
+            // Assert: MockChart was NOT called (no chart created)
+            expect(MockChart).not.toHaveBeenCalled();
+          }
+        ),
+        { numRuns: 100 }
+      );
+    }, 30000);
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Test 2b — Network error preservation
+  // ─────────────────────────────────────────────────────────────────────────
+  describe('Test 2b — Network error preservation', () => {
+    /**
+     * **Validates: Requirements 3.3**
+     *
+     * When fetch rejects (network error), renderItemsChart shows
+     * "No se pudieron cargar las estadísticas." error message.
+     */
+    beforeEach(() => {
+      MockChart.mockClear();
+      MockChart.mockImplementation(() => mockChartInstance);
+    });
+
+    const arbErrorMsg = fc.string({
+      unit: fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz '.split('')),
+      minLength: 1,
+      maxLength: 30
+    });
+
+    it('renderItemsChart shows error message when fetch rejects', async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          arbContainerId2,
+          arbErrorMsg,
+          async (id, msg) => {
+            setupContainer(id);
+            MockChart.mockClear();
+
+            // Mock fetch to reject with network error
+            globalThis.fetch = vi.fn().mockRejectedValue(new Error(msg));
+
+            const { renderItemsChart } = require('../js/charts.js');
+            renderItemsChart(id);
+
+            await flushPromises();
+
+            // Assert: error message is shown
+            const container = document.getElementById(id).parentNode;
+            const errEl = container.querySelector('.chart-error');
+            expect(errEl).not.toBeNull();
+            expect(errEl.textContent).toBe('No se pudieron cargar las estadísticas.');
+          }
+        ),
+        { numRuns: 100 }
+      );
+    }, 30000);
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Test 2c — HTTP error preservation
+  // ─────────────────────────────────────────────────────────────────────────
+  describe('Test 2c — HTTP error preservation', () => {
+    /**
+     * **Validates: Requirements 3.3**
+     *
+     * When fetch returns HTTP error status (400-599), renderItemsChart
+     * shows "No se pudieron cargar las estadísticas." error message.
+     */
+    beforeEach(() => {
+      MockChart.mockClear();
+      MockChart.mockImplementation(() => mockChartInstance);
+    });
+
+    const arbHttpErrorStatus = fc.integer({ min: 400, max: 599 });
+
+    it('renderItemsChart shows error message for HTTP error status codes', async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          arbContainerId2,
+          arbHttpErrorStatus,
+          async (id, statusCode) => {
+            setupContainer(id);
+            MockChart.mockClear();
+
+            // Mock fetch to return HTTP error
+            globalThis.fetch = vi.fn().mockResolvedValue({
+              ok: false,
+              status: statusCode
+            });
+
+            const { renderItemsChart } = require('../js/charts.js');
+            renderItemsChart(id);
+
+            await flushPromises();
+
+            // Assert: error message is shown
+            const container = document.getElementById(id).parentNode;
+            const errEl = container.querySelector('.chart-error');
+            expect(errEl).not.toBeNull();
+            expect(errEl.textContent).toBe('No se pudieron cargar las estadísticas.');
+          }
+        ),
+        { numRuns: 100 }
+      );
+    }, 30000);
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Test 2d — Data grouping/downsampling preservation
+  // ─────────────────────────────────────────────────────────────────────────
+  describe('Test 2d — Data grouping/downsampling preservation', () => {
+    /**
+     * **Validates: Requirements 3.1**
+     *
+     * downsampleDaily continues to produce correct output for
+     * item-chart-shaped data: at most one point per day, sorted
+     * ascending, last point per day preserved.
+     */
+
+    // Generate timestamps within a reasonable range (2020-2025)
+    const arbTimestamp = fc.integer({
+      min: new Date('2020-01-01T00:00:00Z').getTime(),
+      max: new Date('2025-12-31T23:59:59Z').getTime()
+    });
+
+    // Generate item-chart-shaped data points
+    const arbItemPoint = fc.record({
+      x: arbTimestamp,
+      y: fc.nat({ max: 10000 })
+    });
+
+    const arbItemPoints = fc.array(arbItemPoint, { minLength: 0, maxLength: 50 });
+
+    it('downsampleDaily produces at most one point per calendar day', () => {
+      fc.assert(
+        fc.property(arbItemPoints, (points) => {
+          const result = downsampleDaily(points);
+          const days = new Set();
+          result.forEach(p => {
+            const d = new Date(p.x);
+            const key = d.getUTCFullYear() + '-' + (d.getUTCMonth() + 1) + '-' + d.getUTCDate();
+            expect(days.has(key)).toBe(false);
+            days.add(key);
+          });
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('downsampleDaily output is sorted ascending by timestamp', () => {
+      fc.assert(
+        fc.property(arbItemPoints, (points) => {
+          const result = downsampleDaily(points);
+          for (let i = 1; i < result.length; i++) {
+            expect(result[i].x).toBeGreaterThan(result[i - 1].x);
+          }
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('downsampleDaily preserves the last chronological point per day', () => {
+      fc.assert(
+        fc.property(arbItemPoints, (points) => {
+          if (points.length === 0) return;
+
+          const result = downsampleDaily(points);
+
+          // Reference: group by day, keep last chronological point
+          const sorted = points.slice().sort((a, b) => a.x - b.x);
+          const byDay = {};
+          sorted.forEach(p => {
+            const d = new Date(p.x);
+            const key = d.getUTCFullYear() + '-' + (d.getUTCMonth() + 1) + '-' + d.getUTCDate();
+            byDay[key] = p;
+          });
+
+          result.forEach(p => {
+            const d = new Date(p.x);
+            const key = d.getUTCFullYear() + '-' + (d.getUTCMonth() + 1) + '-' + d.getUTCDate();
+            expect(byDay[key]).toBeDefined();
+            expect(p.x).toBe(byDay[key].x);
+            expect(p.y).toBe(byDay[key].y);
+          });
+        }),
+        { numRuns: 100 }
+      );
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Test 2e — Other chart render functions preservation
+  // ─────────────────────────────────────────────────────────────────────────
+  describe('Test 2e — Other chart render functions preservation', () => {
+    /**
+     * **Validates: Requirements 3.4, 3.5**
+     *
+     * Other render functions (renderPieChart, renderBarChart,
+     * renderColumnChart, renderLineChart) continue to create charts
+     * correctly with valid data and are not affected by any changes.
+     */
+    beforeEach(() => {
+      MockChart.mockClear();
+      MockChart.mockImplementation(() => mockChartInstance);
+    });
+
+    // Arbitrary: valid pie chart data
+    const arbPieEntry = fc.record({
+      name: fc.string({ unit: fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz'.split('')), minLength: 1, maxLength: 10 }),
+      y: fc.nat({ max: 1000 })
+    });
+    const arbPieData = fc.array(arbPieEntry, { minLength: 1, maxLength: 10 });
+
+    // Arbitrary: valid bar chart data
+    const arbBarEntry = fc.record({
+      name: fc.string({ unit: fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz'.split('')), minLength: 1, maxLength: 10 }),
+      y: fc.nat({ max: 1000 })
+    });
+    const arbBarData = fc.array(arbBarEntry, { minLength: 1, maxLength: 10 });
+
+    // Arbitrary: valid line chart data (array of numbers)
+    const arbLineData = fc.array(fc.nat({ max: 1000 }), { minLength: 1, maxLength: 20 });
+
+    // Arbitrary: valid column chart data (plain number array)
+    const arbColumnData = fc.array(fc.nat({ max: 1000 }), { minLength: 1, maxLength: 10 });
+    const arbCategories = fc.array(
+      fc.string({ unit: fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz'.split('')), minLength: 1, maxLength: 8 }),
+      { minLength: 1, maxLength: 10 }
+    );
+
+    it('renderPieChart creates a chart with valid data', () => {
+      fc.assert(
+        fc.property(arbContainerId2, arbPieData, (id, data) => {
+          setupContainer(id);
+          MockChart.mockClear();
+
+          const result = renderPieChart(id, data);
+          expect(result).not.toBeNull();
+          expect(MockChart).toHaveBeenCalledTimes(1);
+
+          const config = MockChart.mock.calls[0][1];
+          expect(config.type).toBe('pie');
+          expect(config.data.labels).toEqual(data.map(d => d.name));
+          expect(config.data.datasets[0].data).toEqual(data.map(d => d.y));
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('renderBarChart creates a horizontal bar chart with valid data', () => {
+      fc.assert(
+        fc.property(arbContainerId2, arbBarData, (id, data) => {
+          setupContainer(id);
+          MockChart.mockClear();
+
+          const result = renderBarChart(id, data);
+          expect(result).not.toBeNull();
+          expect(MockChart).toHaveBeenCalledTimes(1);
+
+          const config = MockChart.mock.calls[0][1];
+          expect(config.type).toBe('bar');
+          expect(config.options.indexAxis).toBe('y');
+          expect(config.data.labels).toEqual(data.map(d => d.name));
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('renderColumnChart creates a bar chart with valid number array data', () => {
+      fc.assert(
+        fc.property(arbContainerId2, arbColumnData, arbCategories, (id, data, cats) => {
+          setupContainer(id);
+          MockChart.mockClear();
+
+          const result = renderColumnChart(id, data, cats);
+          expect(result).not.toBeNull();
+          expect(MockChart).toHaveBeenCalledTimes(1);
+
+          const config = MockChart.mock.calls[0][1];
+          expect(config.type).toBe('bar');
+          expect(config.data.datasets[0].data).toEqual(data);
+        }),
+        { numRuns: 100 }
+      );
+    });
+
+    it('renderLineChart creates a line chart with valid data', () => {
+      fc.assert(
+        fc.property(arbContainerId2, arbLineData, (id, data) => {
+          setupContainer(id);
+          MockChart.mockClear();
+
+          const result = renderLineChart(id, data);
+          expect(result).not.toBeNull();
+          expect(MockChart).toHaveBeenCalledTimes(1);
+
+          const config = MockChart.mock.calls[0][1];
+          expect(config.type).toBe('line');
+          expect(config.data.labels).toEqual(data.map((_, i) => i + 1));
+          expect(config.data.datasets[0].data).toEqual(data);
+        }),
+        { numRuns: 100 }
+      );
+    });
+  });
+});

@@ -726,76 +726,81 @@
         });
 
         // Create chart with no datasets — series added via search filter
-        itemsChart = new Chart(canvas, {
-          type: 'line',
-          data: {
-            datasets: []
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            animation: false,
-            scales: {
-              x: {
-                type: 'time',
-                time: {
-                  tooltipFormat: 'dd/MM/yyyy HH:mm',
-                  displayFormats: {
-                    day: 'dd/MM/yy'
-                  }
-                },
-                ticks: {
-                  color: '#e0e0e0',
-                  maxRotation: 45
-                },
-                grid: { color: 'rgba(255,255,255,0.1)' }
-              },
-              y: {
-                title: { display: true, text: 'Cantidad', color: '#e0e0e0' },
-                beginAtZero: true,
-                ticks: { color: '#e0e0e0' },
-                grid: { color: 'rgba(255,255,255,0.1)' }
-              }
+        try {
+          itemsChart = new Chart(canvas, {
+            type: 'line',
+            data: {
+              datasets: []
             },
-            plugins: {
-              legend: {
-                display: true,
-                labels: { color: '#e0e0e0' }
-              },
-              zoom: {
-                zoom: {
-                  wheel: { enabled: true },
-                  mode: 'x'
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: false,
+              scales: {
+                x: {
+                  type: 'time',
+                  time: {
+                    tooltipFormat: 'dd/MM/yyyy HH:mm',
+                    displayFormats: {
+                      day: 'dd/MM/yy'
+                    }
+                  },
+                  ticks: {
+                    color: '#e0e0e0',
+                    maxRotation: 45
+                  },
+                  grid: { color: 'rgba(255,255,255,0.1)' }
                 },
-                pan: {
-                  enabled: true,
-                  mode: 'x'
+                y: {
+                  title: { display: true, text: 'Cantidad', color: '#e0e0e0' },
+                  beginAtZero: true,
+                  ticks: { color: '#e0e0e0' },
+                  grid: { color: 'rgba(255,255,255,0.1)' }
                 }
+              },
+              plugins: {
+                legend: {
+                  display: true,
+                  labels: { color: '#e0e0e0' }
+                },
+                zoom: {
+                  zoom: {
+                    wheel: { enabled: true },
+                    mode: 'x'
+                  },
+                  pan: {
+                    enabled: true,
+                    mode: 'x'
+                  }
+                }
+              },
+              elements: {
+                point: { radius: 0 }
               }
-            },
-            elements: {
-              point: { radius: 0 }
             }
-          }
-        });
+          });
 
-        // Wire up search/filter event listeners
-        var searchInput = document.getElementById('itemsSearch');
-        var clearBtn = document.getElementById('itemsSearchClear');
-        if (searchInput) {
-          searchInput.disabled = false;
-          searchInput.placeholder = 'Buscar items (ej: leña barca mineral)';
-          searchInput.addEventListener('input', function () {
-            applyItemsFilter(searchInput.value);
-          });
-        }
-        if (clearBtn) {
-          clearBtn.addEventListener('click', function () {
-            if (searchInput) searchInput.value = '';
-            clearAllSelections();
-            var countEl = document.getElementById('itemsSearchCount');
-            if (countEl) countEl.textContent = '';
-          });
+          // Wire up search/filter event listeners
+          var searchInput = document.getElementById('itemsSearch');
+          var clearBtn = document.getElementById('itemsSearchClear');
+          if (searchInput) {
+            searchInput.disabled = false;
+            searchInput.placeholder = 'Buscar items (ej: leña barca mineral)';
+            searchInput.addEventListener('input', function () {
+              applyItemsFilter(searchInput.value);
+            });
+          }
+          if (clearBtn) {
+            clearBtn.addEventListener('click', function () {
+              if (searchInput) searchInput.value = '';
+              clearAllSelections();
+              var countEl = document.getElementById('itemsSearchCount');
+              if (countEl) countEl.textContent = '';
+            });
+          }
+        } catch (e) {
+          console.error('Error creating items chart:', e);
+          showError(id, 'No se pudieron cargar las estadísticas.');
         }
       })
       .catch(function () {
