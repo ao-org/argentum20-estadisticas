@@ -2201,3 +2201,226 @@ describe('Feature: items-chart-loading-fix, Property 2: Preservation', () => {
     });
   });
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: random-default-items, Property 1: Invariante de cantidad de selección
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: random-default-items, Property 1: Invariante de cantidad de selección', () => {
+  /**
+   * **Validates: Requirements 1.1, 1.2, 4.3, 5.1, 5.2, 5.3**
+   *
+   * For any array of item names of length N (0 to 200), after calling
+   * selectRandomItems, selectedItems.size must equal min(N, DEFAULT_RANDOM_COUNT).
+   */
+
+  const { selectRandomItems, DEFAULT_RANDOM_COUNT } = chartsModule;
+
+  beforeEach(() => {
+    selectedItems.clear();
+    Object.keys(chartData).forEach(k => delete chartData[k]);
+    mockChartInstance.data.datasets = [];
+    mockChartInstance.update.mockClear();
+    chartsModule.itemsChart = mockChartInstance;
+    document.body.innerHTML = '<div id="itemsSelectedTags"></div>';
+  });
+
+  const arbItemName = fc.string({
+    unit: fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz0123456789'.split('')),
+    minLength: 1,
+    maxLength: 15
+  });
+
+  it('selectedItems.size equals min(N, DEFAULT_RANDOM_COUNT) for any N', () => {
+    fc.assert(
+      fc.property(
+        fc.set(arbItemName, { minLength: 0, maxLength: 200 }),
+        (itemNamesSet) => {
+          const itemNames = Array.from(itemNamesSet);
+
+          // Reset state
+          selectedItems.clear();
+          Object.keys(chartData).forEach(k => delete chartData[k]);
+          mockChartInstance.data.datasets = [];
+
+          // Populate allItemNames and chartData
+          chartsModule.allItemNames = itemNames;
+          for (const name of itemNames) {
+            chartData[name] = [{ x: 1704067200000, y: 10 }];
+          }
+
+          // Act
+          selectRandomItems();
+
+          // Assert
+          const expected = Math.min(itemNames.length, DEFAULT_RANDOM_COUNT);
+          expect(selectedItems.size).toBe(expected);
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: random-default-items, Property 2: Unicidad y pertenencia de la selección
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: random-default-items, Property 2: Unicidad y pertenencia de la selección', () => {
+  /**
+   * **Validates: Requirements 2.1, 2.2**
+   *
+   * For any array of item names, after calling selectRandomItems,
+   * every element in selectedItems must exist in allItemNames
+   * and there must be no duplicates (Set guarantees uniqueness,
+   * but we verify membership).
+   */
+
+  const { selectRandomItems } = chartsModule;
+
+  beforeEach(() => {
+    selectedItems.clear();
+    Object.keys(chartData).forEach(k => delete chartData[k]);
+    mockChartInstance.data.datasets = [];
+    mockChartInstance.update.mockClear();
+    chartsModule.itemsChart = mockChartInstance;
+    document.body.innerHTML = '<div id="itemsSelectedTags"></div>';
+  });
+
+  const arbItemName = fc.string({
+    unit: fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz0123456789'.split('')),
+    minLength: 1,
+    maxLength: 15
+  });
+
+  it('every selected item exists in allItemNames (subset property)', () => {
+    fc.assert(
+      fc.property(
+        fc.set(arbItemName, { minLength: 0, maxLength: 200 }),
+        (itemNamesSet) => {
+          const itemNames = Array.from(itemNamesSet);
+
+          // Reset state
+          selectedItems.clear();
+          Object.keys(chartData).forEach(k => delete chartData[k]);
+          mockChartInstance.data.datasets = [];
+
+          // Populate
+          chartsModule.allItemNames = itemNames;
+          for (const name of itemNames) {
+            chartData[name] = [{ x: 1704067200000, y: 10 }];
+          }
+
+          // Act
+          selectRandomItems();
+
+          // Assert: every selected item is in allItemNames
+          const allNamesSet = new Set(itemNames);
+          for (const selected of selectedItems) {
+            expect(allNamesSet.has(selected)).toBe(true);
+          }
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+
+  it('selectedItems contains no duplicates (verified via array conversion)', () => {
+    fc.assert(
+      fc.property(
+        fc.set(arbItemName, { minLength: 1, maxLength: 200 }),
+        (itemNamesSet) => {
+          const itemNames = Array.from(itemNamesSet);
+
+          // Reset state
+          selectedItems.clear();
+          Object.keys(chartData).forEach(k => delete chartData[k]);
+          mockChartInstance.data.datasets = [];
+
+          // Populate
+          chartsModule.allItemNames = itemNames;
+          for (const name of itemNames) {
+            chartData[name] = [{ x: 1704067200000, y: 10 }];
+          }
+
+          // Act
+          selectRandomItems();
+
+          // Assert: converting Set to array and back to Set has same size
+          const asArray = Array.from(selectedItems);
+          const asSetAgain = new Set(asArray);
+          expect(asArray.length).toBe(asSetAgain.size);
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: random-default-items, Property 3: Sincronización de chart y tags después de la selección aleatoria
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: random-default-items, Property 3: Sincronización de chart y tags después de la selección aleatoria', () => {
+  /**
+   * **Validates: Requirements 1.3, 1.4**
+   *
+   * For any array of item names with associated data in chartData,
+   * after calling selectRandomItems, the number of datasets in the chart
+   * and the number of tags rendered must equal selectedItems.size.
+   */
+
+  const { selectRandomItems } = chartsModule;
+
+  beforeEach(() => {
+    selectedItems.clear();
+    const cd = chartsModule.chartData;
+    Object.keys(cd).forEach(k => delete cd[k]);
+    mockChartInstance.data.datasets = [];
+    mockChartInstance.update.mockClear();
+    chartsModule.itemsChart = mockChartInstance;
+    document.body.innerHTML = '<div id="itemsSelectedTags"></div>';
+  });
+
+  const arbItemName = fc.string({
+    unit: fc.constantFrom(...'abcdefghijklmnopqrstuvwxyz0123456789'.split('')),
+    minLength: 1,
+    maxLength: 15
+  });
+
+  it('chart datasets count and tags count both equal selectedItems.size', () => {
+    fc.assert(
+      fc.property(
+        fc.set(arbItemName, { minLength: 0, maxLength: 200 }),
+        (itemNamesSet) => {
+          const itemNames = Array.from(itemNamesSet);
+
+          // Reset state
+          selectedItems.clear();
+          const cd = chartsModule.chartData;
+          Object.keys(cd).forEach(k => delete cd[k]);
+          mockChartInstance.data.datasets = [];
+          document.getElementById('itemsSelectedTags').innerHTML = '';
+
+          // Populate allItemNames and chartData with dummy time-series data
+          chartsModule.allItemNames = itemNames;
+          for (const name of itemNames) {
+            cd[name] = [
+              { x: 1704067200000, y: 10 },
+              { x: 1704153600000, y: 20 }
+            ];
+          }
+
+          // Act
+          selectRandomItems();
+
+          // Assert: datasets count equals selectedItems.size
+          expect(mockChartInstance.data.datasets.length).toBe(selectedItems.size);
+
+          // Assert: tags count equals selectedItems.size
+          const container = document.getElementById('itemsSelectedTags');
+          const badges = container.querySelectorAll('.badge');
+          expect(badges.length).toBe(selectedItems.size);
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+});

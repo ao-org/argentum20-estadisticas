@@ -572,6 +572,7 @@
   var itemsChart = null;
   var selectedItems = new Set();
   var MAX_SELECTED = 20;
+  var DEFAULT_RANDOM_COUNT = 20;
 
   function updateSelectedTags() {
     var container = document.getElementById('itemsSelectedTags');
@@ -675,6 +676,23 @@
         }
       }
     }
+  }
+
+  function selectRandomItems() {
+    if (allItemNames.length === 0) return;
+    var k = Math.min(allItemNames.length, DEFAULT_RANDOM_COUNT);
+    var copy = allItemNames.slice();
+    for (var i = copy.length - 1; i > copy.length - 1 - k; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var temp = copy[i];
+      copy[i] = copy[j];
+      copy[j] = temp;
+    }
+    for (var n = copy.length - k; n < copy.length; n++) {
+      selectedItems.add(copy[n]);
+    }
+    updateItemsChart();
+    updateSelectedTags();
   }
 
   function renderItemsChart(id) {
@@ -798,6 +816,8 @@
               if (countEl) countEl.textContent = '';
             });
           }
+
+          selectRandomItems();
         } catch (e) {
           console.error('Error creating items chart:', e);
           showError(id, 'No se pudieron cargar las estadísticas.');
@@ -1032,9 +1052,12 @@
       updateItemsChart: updateItemsChart,
       updateSelectedTags: updateSelectedTags,
       clearAllSelections: clearAllSelections,
+      selectRandomItems: selectRandomItems,
+      DEFAULT_RANDOM_COUNT: DEFAULT_RANDOM_COUNT,
       get selectedItems() { return selectedItems; },
       MAX_SELECTED: MAX_SELECTED,
-      chartData: chartData,
+      get chartData() { return chartData; },
+      set chartData(v) { chartData = v; },
       get allItemNames() { return allItemNames; },
       set allItemNames(v) { allItemNames = v; },
       get itemsChart() { return itemsChart; },

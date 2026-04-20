@@ -12,13 +12,16 @@ MockChart.defaults = {
 globalThis.Chart = MockChart;
 
 // charts.js uses an IIFE with module.exports for testing
+const chartsModule = require('../js/charts.js');
 const {
   normalizeStr, downsampleDaily, showLoading, showError, DARK_PALETTE,
   renderPieChart, renderColumnChart, renderBarChart, renderLineChart,
   toggleItemSelection, selectedItems, MAX_SELECTED,
   bucketValues, topN, guildAlignmentColor, computeKdRatio, computeProgressPercent,
-  renderGuildChart, renderFactionChart, initStaticCharts
-} = require('../js/charts.js');
+  renderGuildChart, renderFactionChart, initStaticCharts,
+  selectRandomItems, DEFAULT_RANDOM_COUNT, clearAllSelections,
+  chartData, updateItemsChart, updateSelectedTags
+} = chartsModule;
 
 // ── 3.1 Dark theme palette ─────────────────────────────────────────────────
 describe('DARK_PALETTE', () => {
@@ -712,5 +715,88 @@ describe('initStaticCharts — empty API fallback', () => {
 
     const npcContainer = document.getElementById('chartTopNpcHunters').parentNode;
     expect(npcContainer.querySelector('.chart-error').textContent).toBe('No hay datos de NPCs cazados disponibles.');
+  });
+});
+
+
+// ── selectRandomItems ───────────────────────────────────────────────────────
+describe('selectRandomItems', () => {
+  beforeEach(() => {
+    selectedItems.clear();
+    Object.keys(chartData).forEach(k => delete chartData[k]);
+    chartsModule.itemsChart = { data: { datasets: [] }, update: vi.fn() };
+    document.body.innerHTML = '<div id="itemsSelectedTags"></div>';
+  });
+
+  it('selects exactly 20 items when allItemNames has >= 20 entries', () => {
+    const names = Array.from({ length: 30 }, (_, i) => 'Item' + i);
+    chartsModule.allItemNames = names;
+    for (const name of names) {
+      chartData[name] = [{ x: 1000, y: 1 }];
+    }
+
+    selectRandomItems();
+
+    expect(selectedItems.size).toBe(20);
+  });
+
+  it('selects all items when allItemNames has fewer than 20 entries', () => {
+    const names = ['A', 'B', 'C', 'D', 'E'];
+    chartsModule.allItemNames = names;
+    for (const name of names) {
+      chartData[name] = [{ x: 1000, y: 1 }];
+    }
+
+    selectRandomItems();
+
+    expect(selectedItems.size).toBe(5);
+  });
+
+  it('selects 0 items when allItemNames is empty', () => {
+    chartsModule.allItemNames = [];
+
+    selectRandomItems();
+
+    expect(selectedItems.size).toBe(0);
+  });
+
+  it('selects exactly 1 item when allItemNames has 1 entry', () => {
+    chartsModule.allItemNames = ['SingleItem'];
+    chartData['SingleItem'] = [{ x: 1000, y: 1 }];
+
+    selectRandomItems();
+
+    expect(selectedItems.size).toBe(1);
+    expect(selectedItems.has('SingleItem')).toBe(true);
+  });
+
+  it('after selectRandomItems, user can remove an item with toggleItemSelection', () => {
+    const names = ['A', 'B', 'C', 'D', 'E'];
+    chartsModule.allItemNames = names;
+    for (const name of names) {
+      chartData[name] = [{ x: 1000, y: 1 }];
+    }
+
+    selectRandomItems();
+
+    const itemToRemove = [...selectedItems][0];
+    toggleItemSelection(itemToRemove);
+
+    expect(selectedItems.size).toBe(4);
+    expect(selectedItems.has(itemToRemove)).toBe(false);
+  });
+
+  it('after selectRandomItems, clearAllSelections empties everything', () => {
+    const names = Array.from({ length: 10 }, (_, i) => 'Item' + i);
+    chartsModule.allItemNames = names;
+    for (const name of names) {
+      chartData[name] = [{ x: 1000, y: 1 }];
+    }
+
+    selectRandomItems();
+    expect(selectedItems.size).toBe(10);
+
+    clearAllSelections();
+    expect(selectedItems.size).toBe(0);
   });
 });
