@@ -36,7 +36,7 @@ AO20.config = {
   MAX_SELECTED: 20,
 
   /** Number of random items selected on first load. */
-  DEFAULT_RANDOM_COUNT: 10,
+  DEFAULT_RANDOM_COUNT: 5,
 
   /** Canonical class names used as column-chart categories. */
   CLASS_CATEGORIES: [
@@ -57,7 +57,30 @@ AO20.config = {
     'chartFactionSummary',
     'chartFishingLeaderboard',
     'chartGenderDistribution',
-    'chartTopNpcHunters'
+    'chartTopNpcHunters',
+    'chartCiudadanosVsCriminales',
+    'chartMostDangerousClasses',
+    'chartPvpByLevelBracket',
+    'chartReenlistadas',
+    'chartDeathKillHeatmap',
+    'chartLorenzCurve',
+    'chartMostHoardedItems',
+    'chartEquippedVsUnequipped',
+    'chartElementalTags',
+    'chartTopSkins',
+    'chartGuildSizeDistribution',
+    'chartGuildAlignmentBalance',
+    'chartGuildConcentration',
+    'chartSkillPointPatterns',
+    'chartSpellPopularity',
+    'chartTopPets',
+    'chartMultiCharacterAccounts',
+    'chartCharactersPerMap',
+    'chartFishingCombatCorrelation',
+    'chartGlobalQuestCompletion',
+    'chartAccountRetention',
+    'chartQuestCompletionByClass',
+    'chartDeathsVsLevel'
   ]
 };
 

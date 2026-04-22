@@ -741,7 +741,7 @@ describe('selectRandomItems', () => {
     document.body.innerHTML = '<div id="itemsSelectedTags"></div>';
   });
 
-  it('selects exactly 10 items when allItemNames has >= 10 entries', () => {
+  it('selects exactly DEFAULT_RANDOM_COUNT items when allItemNames has >= that many entries', () => {
     const names = Array.from({ length: 30 }, (_, i) => 'Item' + i);
     chartsModule.allItemNames = names;
     const cd = chartsModule.chartData;
@@ -751,7 +751,7 @@ describe('selectRandomItems', () => {
 
     selectRandomItems();
 
-    expect(selectedItems.size).toBe(10);
+    expect(selectedItems.size).toBe(DEFAULT_RANDOM_COUNT);
   });
 
   it('selects all items when allItemNames has fewer than 20 entries', () => {
@@ -803,7 +803,7 @@ describe('selectRandomItems', () => {
   });
 
   it('after selectRandomItems, clearAllSelections empties everything', () => {
-    const names = Array.from({ length: 10 }, (_, i) => 'Item' + i);
+    const names = Array.from({ length: 30 }, (_, i) => 'Item' + i);
     chartsModule.allItemNames = names;
     const cd = chartsModule.chartData;
     for (const name of names) {
@@ -811,7 +811,7 @@ describe('selectRandomItems', () => {
     }
 
     selectRandomItems();
-    expect(selectedItems.size).toBe(10);
+    expect(selectedItems.size).toBe(DEFAULT_RANDOM_COUNT);
 
     clearAllSelections();
     expect(selectedItems.size).toBe(0);

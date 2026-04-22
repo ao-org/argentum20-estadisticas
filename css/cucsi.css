@@ -71,6 +71,11 @@ body {
   height: 400px;
 }
 
+.chart-h-heatmap {
+  min-height: 300px;
+  overflow: auto;
+}
+
 /* ==========================================================================
    6. Charts — Loading & Error States
    ========================================================================== */
@@ -161,7 +166,30 @@ body {
 }
 
 /* ==========================================================================
-   9. Utilities
+   9. Heatmap Table
+   ========================================================================== */
+
+.heatmap-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.heatmap-table th,
+.heatmap-table td {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.4rem 0.5rem;
+  text-align: center;
+  color: #f1f5f9;
+}
+
+.heatmap-table th {
+  background-color: rgba(255, 255, 255, 0.06);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   10. Utilities
    ========================================================================== */
 
 /* Utility classes are handled by Tailwind CSS.

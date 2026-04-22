@@ -64,10 +64,14 @@ AO20.itemsFilter = (function () {
     if (!container) return;
     container.innerHTML = '';
 
+    var colorIdx = 0;
     selectedItems.forEach(function (name) {
       var badge = document.createElement('span');
-      badge.className = 'badge bg-primary me-1 mb-1';
+      badge.className = 'badge me-1 mb-1';
+      badge.style.backgroundColor = AO20.config.DARK_PALETTE[colorIdx % AO20.config.DARK_PALETTE.length];
+      badge.style.color = '#fff';
       badge.textContent = name;
+      colorIdx++;
 
       var btn = document.createElement('button');
       btn.className = 'btn-close btn-close-white ms-1';

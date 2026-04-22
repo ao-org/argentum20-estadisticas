@@ -144,7 +144,7 @@ AO20.renderers = {
   },
 
   // ── Horizontal bar chart ───────────────────────────────────────────────
-  renderBarChart: function (id, data) {
+  renderBarChart: function (id, data, label) {
     var canvas = document.getElementById(id);
     if (!canvas) return null;
     var container = canvas.parentNode;
@@ -165,7 +165,7 @@ AO20.renderers = {
       data: {
         labels: data.map(function (d) { return d.name; }),
         datasets: [{
-          label: 'Usuarios Matados',
+          label: label || 'Usuarios Matados',
           data: data.map(function (d) { return d.y; }),
           backgroundColor: AO20.config.DARK_PALETTE[0]
         }]
@@ -712,6 +712,329 @@ AO20.renderers = {
       });
   },
 
+  // ── Heatmap color helper ────────────────────────────────────────────────
+  heatmapColor: function (value, min, max) {
+    if (value === null || value === undefined) return '#374151'; // neutral gray
+    var t = (max - min) ? (value - min) / (max - min) : 0;
+    t = Math.max(0, Math.min(1, t));
+    var r, g, b;
+    if (t <= 0.5) {
+      // Green (#2ecc71) → Yellow (#f39c12)
+      var u = t / 0.5;
+      r = Math.round(46 + (243 - 46) * u);
+      g = Math.round(204 + (156 - 204) * u);
+      b = Math.round(113 + (18 - 113) * u);
+    } else {
+      // Yellow (#f39c12) → Red (#e74c3c)
+      var u = (t - 0.5) / 0.5;
+      r = Math.round(243 + (231 - 243) * u);
+      g = Math.round(156 + (76 - 156) * u);
+      b = Math.round(18 + (60 - 18) * u);
+    }
+    return 'rgb(' + r + ',' + g + ',' + b + ')';
+  },
+
+  // ── Heatmap table renderer ─────────────────────────────────────────────
+  renderHeatmapTable: function (containerId, data) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+
+    var loading = container.querySelector('.chart-loading');
+    if (loading) loading.remove();
+
+    if (!data || data.length === 0) {
+      var fallback = document.createElement('div');
+      fallback.className = 'chart-error';
+      fallback.textContent = 'No hay datos disponibles.';
+      container.appendChild(fallback);
+      return;
+    }
+
+    // Collect unique classes and races
+    var classSet = {};
+    var raceSet = {};
+    var matrix = {};
+    data.forEach(function (d) {
+      classSet[d.className] = true;
+      raceSet[d.raceName] = true;
+      if (!matrix[d.className]) matrix[d.className] = {};
+      matrix[d.className][d.raceName] = d.avgDeathPerKill;
+    });
+    var classes = Object.keys(classSet);
+    var races = Object.keys(raceSet);
+
+    // Find min/max for color scaling (excluding nulls)
+    var values = [];
+    data.forEach(function (d) {
+      if (d.avgDeathPerKill !== null && d.avgDeathPerKill !== undefined) {
+        values.push(d.avgDeathPerKill);
+      }
+    });
+    var min = values.length > 0 ? Math.min.apply(null, values) : 0;
+    var max = values.length > 0 ? Math.max.apply(null, values) : 1;
+
+    var self = this;
+    var table = document.createElement('table');
+    table.className = 'heatmap-table';
+
+    // Header row
+    var thead = document.createElement('thead');
+    var headerRow = document.createElement('tr');
+    var emptyTh = document.createElement('th');
+    headerRow.appendChild(emptyTh);
+    races.forEach(function (race) {
+      var th = document.createElement('th');
+      th.textContent = race;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    // Data rows
+    var tbody = document.createElement('tbody');
+    classes.forEach(function (cls) {
+      var row = document.createElement('tr');
+      var th = document.createElement('th');
+      th.textContent = cls;
+      row.appendChild(th);
+      races.forEach(function (race) {
+        var td = document.createElement('td');
+        var val = matrix[cls] && matrix[cls][race] !== undefined ? matrix[cls][race] : null;
+        if (val === null) {
+          td.textContent = 'N/A';
+          td.style.backgroundColor = '#374151';
+        } else {
+          td.textContent = val.toFixed(2);
+          td.style.backgroundColor = self.heatmapColor(val, min, max);
+        }
+        row.appendChild(td);
+      });
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+    container.appendChild(table);
+  },
+
+  // ── Lorenz curve chart ─────────────────────────────────────────────────
+  renderLorenzChart: function (id, data) {
+    var canvas = document.getElementById(id);
+    if (!canvas) return null;
+    var container = canvas.parentNode;
+
+    var loading = container.querySelector('.chart-loading');
+    if (loading) loading.remove();
+
+    if (!data || !data.lorenzCurve || data.lorenzCurve.length === 0) {
+      var fallback = document.createElement('div');
+      fallback.className = 'chart-error';
+      fallback.textContent = 'No hay datos disponibles.';
+      container.appendChild(fallback);
+      return null;
+    }
+
+    // Update Gini stat badge if present
+    var giniEl = document.getElementById('giniValue');
+    if (giniEl) {
+      giniEl.textContent = data.giniCoefficient != null ? data.giniCoefficient.toFixed(4) : '—';
+    }
+
+    var labels = data.lorenzCurve.map(function (p) { return p.populationPercent + '%'; });
+    var lorenzData = data.lorenzCurve.map(function (p) { return p.goldPercent; });
+    var equalityData = data.lorenzCurve.map(function (p) { return p.populationPercent; });
+
+    return new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Curva de Lorenz',
+            data: lorenzData,
+            borderColor: AO20.config.DARK_PALETTE[1],
+            backgroundColor: 'rgba(52, 152, 219, 0.2)',
+            fill: true,
+            tension: 0.1,
+            pointRadius: 3
+          },
+          {
+            label: 'Igualdad Perfecta',
+            data: equalityData,
+            borderColor: AO20.config.DARK_PALETTE[2],
+            borderDash: [5, 5],
+            backgroundColor: 'transparent',
+            fill: false,
+            tension: 0,
+            pointRadius: 0
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            title: { display: true, text: '% Población', color: '#e0e0e0' },
+            grid: { color: 'rgba(255,255,255,0.1)' },
+            ticks: { color: '#e0e0e0' }
+          },
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: '% Oro Acumulado', color: '#e0e0e0' },
+            grid: { color: 'rgba(255,255,255,0.1)' },
+            ticks: { color: '#e0e0e0' }
+          }
+        },
+        plugins: {
+          legend: {
+            display: true,
+            labels: { color: '#e0e0e0' }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false
+          }
+        }
+      }
+    });
+  },
+
+  // ── Retention chart (line with YYYY-MM labels) ─────────────────────────
+  renderRetentionChart: function (id, data) {
+    var canvas = document.getElementById(id);
+    if (!canvas) return null;
+    var container = canvas.parentNode;
+
+    var loading = container.querySelector('.chart-loading');
+    if (loading) loading.remove();
+
+    if (!data || data.length === 0) {
+      var fallback = document.createElement('div');
+      fallback.className = 'chart-error';
+      fallback.textContent = 'No hay datos disponibles.';
+      container.appendChild(fallback);
+      return null;
+    }
+
+    var labels = data.map(function (d) { return d.cohortMonth; });
+    var values = data.map(function (d) { return d.retentionPercent; });
+
+    return new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Retención %',
+          data: values,
+          borderColor: AO20.config.DARK_PALETTE[1],
+          backgroundColor: 'rgba(52, 152, 219, 0.2)',
+          fill: true,
+          tension: 0.1,
+          pointRadius: 3
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            title: { display: true, text: 'Cohorte (mes)', color: '#e0e0e0' },
+            grid: { color: 'rgba(255,255,255,0.1)' },
+            ticks: { color: '#e0e0e0' }
+          },
+          y: {
+            beginAtZero: true,
+            max: 100,
+            title: { display: true, text: 'Retención %', color: '#e0e0e0' },
+            grid: { color: 'rgba(255,255,255,0.1)' },
+            ticks: { color: '#e0e0e0' }
+          }
+        },
+        plugins: {
+          legend: {
+            display: true,
+            labels: { color: '#e0e0e0' }
+          },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) {
+                return ctx.parsed.y.toFixed(1) + '%';
+              }
+            }
+          }
+        }
+      }
+    });
+  },
+
+  // ── Percent bar chart (horizontal, 0–100% X-axis) ─────────────────────
+  renderPercentBarChart: function (id, data) {
+    var canvas = document.getElementById(id);
+    if (!canvas) return null;
+    var container = canvas.parentNode;
+
+    var loading = container.querySelector('.chart-loading');
+    if (loading) loading.remove();
+
+    if (!data || data.length === 0) {
+      var fallback = document.createElement('div');
+      fallback.className = 'chart-error';
+      fallback.textContent = 'No hay datos disponibles.';
+      container.appendChild(fallback);
+      return null;
+    }
+
+    return new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: data.map(function (d) { return d.questName; }),
+        datasets: [{
+          label: 'Completado %',
+          data: data.map(function (d) { return d.completionPercent; }),
+          backgroundColor: AO20.config.DARK_PALETTE[2]
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            beginAtZero: true,
+            max: 100,
+            title: { display: true, text: 'Completado %', color: '#e0e0e0' },
+            grid: { color: 'rgba(255,255,255,0.1)' },
+            ticks: { color: '#e0e0e0' }
+          },
+          y: {
+            grid: { color: 'rgba(255,255,255,0.1)' },
+            ticks: { color: '#e0e0e0' }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) {
+                var item = data[ctx.dataIndex];
+                return item.totalContributions + ' / ' + item.threshold + ' (' + item.completionPercent.toFixed(1) + '%)';
+              }
+            }
+          }
+        }
+      }
+    });
+  },
+
+  // ── Stat card helper ───────────────────────────────────────────────────
+  renderStatCard: function (containerId, value, subtitle) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    var valEl = container.querySelector('.stat-value');
+    if (valEl) valEl.textContent = value != null ? value : '—';
+    var descEl = container.querySelector('.stat-desc');
+    if (descEl) descEl.textContent = subtitle != null ? subtitle : '';
+  },
+
   // ── Static charts orchestration ────────────────────────────────────────
   initStaticCharts: function () {
     var self = this;
@@ -808,6 +1131,148 @@ AO20.renderers = {
         } else {
           self.renderBarChart('chartTopNpcHunters', npcData);
         }
+
+        // PvP & Combat
+        var cvsc = data.ciudadanosVsCriminales;
+        if (cvsc) {
+          self.renderPieChart('chartCiudadanosVsCriminales', [
+            { name: 'Ciudadanos Matados', y: cvsc.totalCiudadanosMatados },
+            { name: 'Criminales Matados', y: cvsc.totalCriminalesMatados }
+          ]);
+        }
+        self.renderBarChart('chartMostDangerousClasses',
+          (data.mostDangerousClasses || []).map(function(d) { return { name: d.className, y: d.deathPerKillRatio }; }),
+          'Ratio Muertes/Kills'
+        );
+        self.renderColumnChart('chartPvpByLevelBracket',
+          (data.pvpByLevelBracket || []).map(function(d) { return d.avgKills; }),
+          (data.pvpByLevelBracket || []).map(function(d) { return d.bracket; })
+        );
+        self.renderColumnChart('chartReenlistadas',
+          (data.reenlistadasDistribution || []).map(function(d) { return d.count; }),
+          (data.reenlistadasDistribution || []).map(function(d) { return String(d.reenlistadas); })
+        );
+        self.renderHeatmapTable('chartDeathKillHeatmap', data.deathKillHeatmap);
+
+        // Economy & Items
+        self.renderLorenzChart('chartLorenzCurve', data.giniLorenz);
+        var bankRate = data.bankUsageRate;
+        if (bankRate) {
+          self.renderStatCard('statBankUsage', bankRate.bankUsagePercent.toFixed(1) + '%', bankRate.bankUsersCount + ' / ' + bankRate.totalActiveCharacters + ' personajes');
+        }
+        self.renderBarChart('chartMostHoardedItems',
+          (data.mostHoardedItems || []).map(function(d) { return { name: 'Item #' + d.itemId, y: d.totalAmount }; }),
+          'Cantidad Total'
+        );
+        var evu = data.equippedVsUnequipped;
+        if (evu) {
+          self.renderPieChart('chartEquippedVsUnequipped', [
+            { name: 'Equipado', y: evu.equippedCount },
+            { name: 'No Equipado', y: evu.unequippedCount }
+          ]);
+        }
+        var etd = data.elementalTagsDistribution;
+        if (etd) {
+          self.renderPieChart('chartElementalTags', [
+            { name: 'Con Tags Elementales', y: etd.withElementalTags },
+            { name: 'Sin Tags Elementales', y: etd.withoutElementalTags }
+          ]);
+        }
+
+        // Social & Guilds
+        self.renderColumnChart('chartGuildSizeDistribution',
+          (data.guildSizeDistribution || []).map(function(d) { return d.guildCount; }),
+          (data.guildSizeDistribution || []).map(function(d) { return d.bucket; })
+        );
+        var grr = data.guildRejectionRate;
+        if (grr) {
+          self.renderStatCard('statGuildRejection', (grr.rejectionRate * 100).toFixed(1) + '%', grr.totalAcceptances + ' aceptados / ' + grr.totalRequests + ' solicitudes');
+        }
+        var mr = data.marriageRate;
+        if (mr) {
+          self.renderStatCard('statMarriage', mr.marriagePercent.toFixed(1) + '%', mr.marriedCount + ' / ' + mr.totalActiveCharacters + ' personajes');
+        }
+        var gab = data.guildAlignmentBalance;
+        if (gab) {
+          self.renderPieChart('chartGuildAlignmentBalance', gab.map(function(d) { return { name: d.alignmentName, y: d.count }; }));
+        }
+        var gc = data.guildConcentration;
+        if (gc) {
+          self.renderPieChart('chartGuildConcentration', [
+            { name: 'Top 10 Guilds', y: gc.topGuildMembers },
+            { name: 'Otros Guilds', y: gc.otherGuildMembers },
+            { name: 'Independientes', y: gc.independents }
+          ]);
+        }
+
+        // Character Building
+        self.renderColumnChart('chartSkillPointPatterns',
+          (data.skillPointPatterns || []).map(function(d) { return d.avgValue; }),
+          (data.skillPointPatterns || []).map(function(d) { return 'Skill #' + d.skillNumber; })
+        );
+        self.renderBarChart('chartSpellPopularity',
+          (data.spellPopularity || []).map(function(d) { return { name: 'Spell #' + d.spellId, y: d.characterCount }; }),
+          'Personajes'
+        );
+        var sa = data.skinAdoption;
+        if (sa) {
+          self.renderStatCard('statSkinAdoption', sa.skinAdoptionPercent.toFixed(1) + '%', sa.skinUsersCount + ' / ' + sa.totalActiveCharacters + ' personajes');
+          self.renderBarChart('chartTopSkins',
+            sa.topSkins.map(function(d) { return { name: 'Skin #' + d.skinId, y: d.count }; }),
+            'Cantidad'
+          );
+        }
+        var po = data.petOwnership;
+        if (po) {
+          self.renderStatCard('statPetOwnership', po.petOwnershipPercent.toFixed(1) + '%', po.petOwnersCount + ' / ' + po.totalActiveCharacters + ' personajes');
+          self.renderBarChart('chartTopPets',
+            po.topPets.map(function(d) { return { name: 'Pet #' + d.petId, y: d.count }; }),
+            'Cantidad'
+          );
+        }
+
+        // Activity & Misc
+        var mca = data.multiCharacterAccounts;
+        if (mca) {
+          self.renderPieChart('chartMultiCharacterAccounts', mca.map(function(d) { return { name: d.bucket, y: d.accountCount }; }));
+        }
+        self.renderBarChart('chartCharactersPerMap',
+          (data.charactersPerMap || []).map(function(d) { return { name: 'Mapa #' + d.mapId, y: d.characterCount }; }),
+          'Personajes'
+        );
+        var dcr = data.deadCharacterRate;
+        if (dcr) {
+          self.renderStatCard('statDeadCharacter', dcr.deadPercent.toFixed(1) + '%', dcr.deadCount + ' / ' + dcr.totalActiveCharacters + ' personajes');
+        }
+        var sr = data.sailingRate;
+        if (sr) {
+          self.renderStatCard('statSailing', sr.sailingPercent.toFixed(1) + '%', sr.sailingCount + ' / ' + sr.totalActiveCharacters + ' personajes');
+        }
+        self.renderColumnChart('chartFishingCombatCorrelation',
+          (data.fishingCombatCorrelation || []).map(function(d) { return d.avgKills; }),
+          (data.fishingCombatCorrelation || []).map(function(d) { return d.fishingBracket; })
+        );
+
+        // Events & Server Health
+        var gqp = data.globalQuestParticipation;
+        if (gqp) {
+          self.renderStatCard('statQuestParticipation', gqp.participationPercent.toFixed(1) + '%', gqp.participantCount + ' / ' + gqp.totalActiveCharacters + ' personajes');
+        }
+        self.renderPercentBarChart('chartGlobalQuestCompletion', data.globalQuestCompletion);
+        self.renderRetentionChart('chartAccountRetention', data.accountRetention);
+        var pdr = data.patronDonorRate;
+        if (pdr) {
+          self.renderStatCard('statPatronDonor', pdr.patronPercent.toFixed(1) + '%', pdr.patronCount + ' patrones / ' + pdr.totalAccounts + ' cuentas');
+        }
+        self.renderBarChart('chartQuestCompletionByClass',
+          (data.questCompletionByClass || []).map(function(d) { return { name: d.className, y: d.avgQuestsCompleted }; }),
+          'Quests Promedio'
+        );
+        // Deaths vs Level Curve — line chart
+        var dvl = data.deathsVsLevelCurve;
+        if (dvl && dvl.length > 0) {
+          self.renderLineChart('chartDeathsVsLevel', dvl.map(function(d) { return d.avgDeaths; }));
+        }
       })
       .catch(function () {
         STATIC_CHART_IDS.forEach(function (id) {
@@ -817,7 +1282,95 @@ AO20.renderers = {
   }
 };
 
+// ── Utility functions (exported for testing) ──────────────────────────────
+
+function computeGini(sortedValues) {
+  var n = sortedValues.length;
+  if (n === 0) return 0;
+  var sum = sortedValues.reduce(function (a, b) { return a + b; }, 0);
+  if (sum === 0) return 0;
+  var weightedSum = 0;
+  for (var i = 0; i < n; i++) {
+    weightedSum += (i + 1) * sortedValues[i];
+  }
+  return (2 * weightedSum) / (n * sum) - (n + 1) / n;
+}
+
+function computeLorenzCurve(sortedValues) {
+  var n = sortedValues.length;
+  if (n === 0) return [];
+  var totalGold = sortedValues.reduce(function (a, b) { return a + b; }, 0);
+  var points = [];
+  for (var p = 1; p <= 20; p++) {
+    var populationPercent = p * 5;
+    var idx = Math.ceil((populationPercent / 100) * n);
+    var cumulativeGold = 0;
+    for (var i = 0; i < idx; i++) {
+      cumulativeGold += sortedValues[i];
+    }
+    var goldPercent = (totalGold > 0) ? (cumulativeGold / totalGold) * 100 : 0;
+    points.push({ populationPercent: populationPercent, goldPercent: goldPercent });
+  }
+  return points;
+}
+
+function getLevelBracket(level) {
+  if (level < 1) return '1-5';
+  if (level > 50) return '46-50';
+  var bracketStart = Math.floor((level - 1) / 5) * 5 + 1;
+  var bracketEnd = bracketStart + 4;
+  return bracketStart + '-' + bracketEnd;
+}
+
+function getGuildSizeBucket(memberCount) {
+  if (memberCount <= 1) return '1';
+  if (memberCount <= 5) return '2-5';
+  if (memberCount <= 10) return '6-10';
+  if (memberCount <= 20) return '11-20';
+  if (memberCount <= 50) return '21-50';
+  return '51+';
+}
+
+function getMultiCharBucket(charCount) {
+  if (charCount <= 1) return '1 personaje';
+  if (charCount === 2) return '2 personajes';
+  return '3+ personajes';
+}
+
+function getFishingBracket(score) {
+  if (score <= 100) return '1-100';
+  if (score <= 500) return '101-500';
+  if (score <= 1000) return '501-1000';
+  if (score <= 5000) return '1001-5000';
+  return '5001+';
+}
+
+function computeRejectionRate(totalRequests, totalAcceptances) {
+  if (totalRequests <= 0) return 0;
+  return 1 - (totalAcceptances / totalRequests);
+}
+
+function computeCompletionPercent(totalContributions, threshold) {
+  if (threshold <= 0) return 0;
+  return Math.min(100, (totalContributions / threshold) * 100);
+}
+
+function computePercentage(count, total) {
+  if (total <= 0) return 0;
+  return (count / total) * 100;
+}
+
 // ── Export for testing ─────────────────────────────────────────────────────
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = AO20;
+  module.exports.computeGini = computeGini;
+  module.exports.computeLorenzCurve = computeLorenzCurve;
+  module.exports.heatmapColor = AO20.renderers.heatmapColor.bind(AO20.renderers);
+  module.exports.getLevelBracket = getLevelBracket;
+  module.exports.getGuildSizeBucket = getGuildSizeBucket;
+  module.exports.getMultiCharBucket = getMultiCharBucket;
+  module.exports.getFishingBracket = getFishingBracket;
+  module.exports.computeRejectionRate = computeRejectionRate;
+  module.exports.computeCompletionPercent = computeCompletionPercent;
+  module.exports.computePercentage = computePercentage;
 }

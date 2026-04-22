@@ -39,6 +39,13 @@ $stats = getGeneralStats();
         <li><a href="#section-economia">Economía</a></li>
         <li><a href="#section-rankings">Rankings</a></li>
         <li><a href="#section-comunidad">Comunidad</a></li>
+        <li><a href="#section-pvp-combate">PvP y Combate</a></li>
+        <li><a href="#section-economia-avanzada">Economía Avanzada</a></li>
+        <li><a href="#section-social-guilds">Social y Guilds</a></li>
+        <li><a href="#section-construccion-personaje">Construcción de Personaje</a></li>
+        <li><a href="#section-actividad">Actividad</a></li>
+        <li><a href="#section-eventos-globales">Eventos Globales</a></li>
+        <li><a href="#section-otros">Otros</a></li>
       </ul>
     </div>
   </div>
@@ -192,6 +199,322 @@ $stats = getGeneralStats();
           <div class="card-body">
             <h3 class="card-title">Steam</h3>
             <iframe src="https://steamdb.info/embed/?appid=1956740" height="389" class="border-0 w-full" loading="lazy"></iframe>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: PvP y Combate -->
+    <section id="section-pvp-combate" class="mb-16">
+      <h2 class="text-2xl font-semibold mb-6">PvP y Combate</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Ciudadanos vs Criminales</h2>
+            <div class="chart-h-300">
+              <canvas id="chartCiudadanosVsCriminales"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Clases Más Peligrosas</h2>
+            <div class="chart-h-300">
+              <canvas id="chartMostDangerousClasses"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">PvP por Rango de Nivel</h2>
+            <div class="chart-h-300">
+              <canvas id="chartPvpByLevelBracket"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Distribución de Reenlistadas</h2>
+            <div class="chart-h-300">
+              <canvas id="chartReenlistadas"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl md:col-span-2">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Heatmap Muertes/Kills por Clase y Raza</h2>
+            <div id="chartDeathKillHeatmap" class="chart-h-heatmap overflow-x-auto"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Economía Avanzada -->
+    <section id="section-economia-avanzada" class="mb-16">
+      <h2 class="text-2xl font-semibold mb-6">Economía Avanzada</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Curva de Lorenz</h2>
+            <div id="giniValue" class="stat p-0 mb-2">
+              <div class="stat-value text-2xl">—</div>
+              <div class="stat-desc">Coeficiente de Gini</div>
+            </div>
+            <div class="chart-h-300">
+              <canvas id="chartLorenzCurve"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Uso del Banco</h2>
+            <div id="statBankUsage" class="stat p-0">
+              <div class="stat-value text-2xl">—</div>
+              <div class="stat-desc">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Items Más Acumulados</h2>
+            <div class="chart-h-300">
+              <canvas id="chartMostHoardedItems"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Equipado vs No Equipado</h2>
+            <div class="chart-h-300">
+              <canvas id="chartEquippedVsUnequipped"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Tags Elementales</h2>
+            <div class="chart-h-300">
+              <canvas id="chartElementalTags"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Social y Guilds -->
+    <section id="section-social-guilds" class="mb-16">
+      <h2 class="text-2xl font-semibold mb-6">Social y Guilds</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Distribución de Tamaño de Guilds</h2>
+            <div class="chart-h-300">
+              <canvas id="chartGuildSizeDistribution"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Tasa de Rechazo de Guilds</h2>
+            <div id="statGuildRejection" class="stat p-0">
+              <div class="stat-value text-2xl">—</div>
+              <div class="stat-desc">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Tasa de Matrimonio</h2>
+            <div id="statMarriage" class="stat p-0">
+              <div class="stat-value text-2xl">—</div>
+              <div class="stat-desc">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Balance de Alineación de Guilds</h2>
+            <div class="chart-h-300">
+              <canvas id="chartGuildAlignmentBalance"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Concentración de Guilds</h2>
+            <div class="chart-h-300">
+              <canvas id="chartGuildConcentration"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Construcción de Personaje -->
+    <section id="section-construccion-personaje" class="mb-16">
+      <h2 class="text-2xl font-semibold mb-6">Construcción de Personaje</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Patrones de Skill Points</h2>
+            <div class="chart-h-300">
+              <canvas id="chartSkillPointPatterns"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Popularidad de Hechizos</h2>
+            <div class="chart-h-300">
+              <canvas id="chartSpellPopularity"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Adopción de Skins</h2>
+            <div id="statSkinAdoption" class="stat p-0">
+              <div class="stat-value text-2xl">—</div>
+              <div class="stat-desc">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Top 15 Skins</h2>
+            <div class="chart-h-300">
+              <canvas id="chartTopSkins"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Posesión de Mascotas</h2>
+            <div id="statPetOwnership" class="stat p-0">
+              <div class="stat-value text-2xl">—</div>
+              <div class="stat-desc">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Top 15 Mascotas</h2>
+            <div class="chart-h-300">
+              <canvas id="chartTopPets"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Actividad -->
+    <section id="section-actividad" class="mb-16">
+      <h2 class="text-2xl font-semibold mb-6">Actividad</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Cuentas Multi-Personaje</h2>
+            <div class="chart-h-300">
+              <canvas id="chartMultiCharacterAccounts"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Personajes por Mapa</h2>
+            <div class="chart-h-300">
+              <canvas id="chartCharactersPerMap"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Tasa de Personajes Muertos</h2>
+            <div id="statDeadCharacter" class="stat p-0">
+              <div class="stat-value text-2xl">—</div>
+              <div class="stat-desc">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Tasa de Navegación</h2>
+            <div id="statSailing" class="stat p-0">
+              <div class="stat-value text-2xl">—</div>
+              <div class="stat-desc">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl md:col-span-2">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Correlación Pesca vs Combate</h2>
+            <div class="chart-h-300">
+              <canvas id="chartFishingCombatCorrelation"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Eventos Globales -->
+    <section id="section-eventos-globales" class="mb-16">
+      <h2 class="text-2xl font-semibold mb-6">Eventos Globales</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Participación en Quests Globales</h2>
+            <div id="statQuestParticipation" class="stat p-0">
+              <div class="stat-value text-2xl">—</div>
+              <div class="stat-desc">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Completado de Quests Globales</h2>
+            <div class="chart-h-300">
+              <canvas id="chartGlobalQuestCompletion"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl md:col-span-2">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Retención de Cuentas</h2>
+            <div class="chart-h-300">
+              <canvas id="chartAccountRetention"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Otros -->
+    <section id="section-otros" class="mb-16">
+      <h2 class="text-2xl font-semibold mb-6">Otros</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Tasa de Patrones/Donantes</h2>
+            <div id="statPatronDonor" class="stat p-0">
+              <div class="stat-value text-2xl">—</div>
+              <div class="stat-desc">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Quests Completadas por Clase</h2>
+            <div class="chart-h-300">
+              <canvas id="chartQuestCompletionByClass"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="card bg-base-200 shadow-xl md:col-span-2">
+          <div class="card-body">
+            <h2 class="card-title text-sm">Muertes vs Nivel</h2>
+            <div class="chart-h-300">
+              <canvas id="chartDeathsVsLevel"></canvas>
+            </div>
           </div>
         </div>
       </div>
