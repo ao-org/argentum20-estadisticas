@@ -816,12 +816,19 @@
               if (countEl) countEl.textContent = '';
             });
           }
-
-          selectRandomItems();
         } catch (e) {
           console.error('Error creating items chart:', e);
           showError(id, 'No se pudieron cargar las estadísticas.');
+          return;
         }
+
+        requestAnimationFrame(function () {
+          try {
+            selectRandomItems();
+          } catch (e2) {
+            console.error('Error selecting random items:', e2);
+          }
+        });
       })
       .catch(function () {
         showError(id, 'No se pudieron cargar las estadísticas.');
