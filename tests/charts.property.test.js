@@ -2217,7 +2217,8 @@ describe('Feature: random-default-items, Property 1: Invariante de cantidad de s
 
   beforeEach(() => {
     selectedItems.clear();
-    Object.keys(chartData).forEach(k => delete chartData[k]);
+    const cd = chartsModule.chartData;
+    Object.keys(cd).forEach(k => delete cd[k]);
     mockChartInstance.data.datasets = [];
     mockChartInstance.update.mockClear();
     chartsModule.itemsChart = mockChartInstance;
@@ -2239,13 +2240,14 @@ describe('Feature: random-default-items, Property 1: Invariante de cantidad de s
 
           // Reset state
           selectedItems.clear();
-          Object.keys(chartData).forEach(k => delete chartData[k]);
+          const cd = chartsModule.chartData;
+          Object.keys(cd).forEach(k => delete cd[k]);
           mockChartInstance.data.datasets = [];
 
           // Populate allItemNames and chartData
           chartsModule.allItemNames = itemNames;
           for (const name of itemNames) {
-            chartData[name] = [{ x: 1704067200000, y: 10 }];
+            cd[name] = [{ x: 1704067200000, y: 10 }];
           }
 
           // Act
@@ -2278,7 +2280,8 @@ describe('Feature: random-default-items, Property 2: Unicidad y pertenencia de l
 
   beforeEach(() => {
     selectedItems.clear();
-    Object.keys(chartData).forEach(k => delete chartData[k]);
+    const cd = chartsModule.chartData;
+    Object.keys(cd).forEach(k => delete cd[k]);
     mockChartInstance.data.datasets = [];
     mockChartInstance.update.mockClear();
     chartsModule.itemsChart = mockChartInstance;
@@ -2300,13 +2303,14 @@ describe('Feature: random-default-items, Property 2: Unicidad y pertenencia de l
 
           // Reset state
           selectedItems.clear();
-          Object.keys(chartData).forEach(k => delete chartData[k]);
+          const cd = chartsModule.chartData;
+          Object.keys(cd).forEach(k => delete cd[k]);
           mockChartInstance.data.datasets = [];
 
           // Populate
           chartsModule.allItemNames = itemNames;
           for (const name of itemNames) {
-            chartData[name] = [{ x: 1704067200000, y: 10 }];
+            cd[name] = [{ x: 1704067200000, y: 10 }];
           }
 
           // Act
@@ -2332,13 +2336,14 @@ describe('Feature: random-default-items, Property 2: Unicidad y pertenencia de l
 
           // Reset state
           selectedItems.clear();
-          Object.keys(chartData).forEach(k => delete chartData[k]);
+          const cd = chartsModule.chartData;
+          Object.keys(cd).forEach(k => delete cd[k]);
           mockChartInstance.data.datasets = [];
 
           // Populate
           chartsModule.allItemNames = itemNames;
           for (const name of itemNames) {
-            chartData[name] = [{ x: 1704067200000, y: 10 }];
+            cd[name] = [{ x: 1704067200000, y: 10 }];
           }
 
           // Act

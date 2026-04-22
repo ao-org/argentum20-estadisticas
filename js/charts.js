@@ -3,16 +3,26 @@
 
   // ── 3.1 Dark theme defaults ──────────────────────────────────────────────
   var DARK_PALETTE = [
-    '#375a7f', // primary blue
-    '#00bc8c', // success green
-    '#3498db', // info blue
-    '#f39c12', // warning orange
-    '#e74c3c', // danger red
+    '#e74c3c', // red
+    '#3498db', // blue
+    '#2ecc71', // emerald
+    '#f39c12', // orange
     '#9b59b6', // purple
     '#1abc9c', // teal
     '#e67e22', // dark orange
-    '#2ecc71', // emerald
-    '#fd7e14'  // bright orange
+    '#00bc8c', // green
+    '#fd7e14', // bright orange
+    '#375a7f', // navy
+    '#e84393', // pink
+    '#00cec9', // cyan
+    '#fdcb6e', // yellow
+    '#6c5ce7', // indigo
+    '#d63031', // crimson
+    '#74b9ff', // light blue
+    '#a29bfe', // lavender
+    '#55efc4', // mint
+    '#fab1a0', // salmon
+    '#81ecec'  // aqua
   ];
 
   if (typeof Chart !== 'undefined') {
@@ -572,7 +582,7 @@
   var itemsChart = null;
   var selectedItems = new Set();
   var MAX_SELECTED = 20;
-  var DEFAULT_RANDOM_COUNT = 20;
+  var DEFAULT_RANDOM_COUNT = 10;
 
   function updateSelectedTags() {
     var container = document.getElementById('itemsSelectedTags');
@@ -680,8 +690,22 @@
 
   function selectRandomItems() {
     if (allItemNames.length === 0) return;
-    var k = Math.min(allItemNames.length, DEFAULT_RANDOM_COUNT);
-    var copy = allItemNames.slice();
+
+    // Filter to items that have meaningful data (max value > 0)
+    var candidates = allItemNames.filter(function (name) {
+      var pts = chartData[name];
+      if (!pts || pts.length === 0) return false;
+      var maxVal = 0;
+      for (var i = 0; i < pts.length; i++) {
+        if (pts[i].y > maxVal) maxVal = pts[i].y;
+      }
+      return maxVal > 0;
+    });
+
+    if (candidates.length === 0) return;
+
+    var k = Math.min(candidates.length, DEFAULT_RANDOM_COUNT);
+    var copy = candidates.slice();
     for (var i = copy.length - 1; i > copy.length - 1 - k; i--) {
       var j = Math.floor(Math.random() * (i + 1));
       var temp = copy[i];
@@ -745,11 +769,32 @@
 
         // Create chart with no datasets — series added via search filter
         try {
+          // Crosshair plugin — draws a vertical line at the hovered x position
+          var crosshairPlugin = {
+            id: 'itemsCrosshair',
+            afterDraw: function (chart) {
+              if (chart.tooltip && chart.tooltip._active && chart.tooltip._active.length) {
+                var x = chart.tooltip._active[0].element.x;
+                var yAxis = chart.scales.y;
+                var ctx = chart.ctx;
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(x, yAxis.top);
+                ctx.lineTo(x, yAxis.bottom);
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.stroke();
+                ctx.restore();
+              }
+            }
+          };
+
           itemsChart = new Chart(canvas, {
             type: 'line',
             data: {
               datasets: []
             },
+            plugins: [crosshairPlugin],
             options: {
               responsive: true,
               maintainAspectRatio: false,
@@ -758,7 +803,7 @@
                 x: {
                   type: 'time',
                   time: {
-                    tooltipFormat: 'dd/MM/yyyy HH:mm',
+                    tooltipFormat: 'dd/MM/yyyy',
                     displayFormats: {
                       day: 'dd/MM/yy'
                     }
@@ -779,7 +824,29 @@
               plugins: {
                 legend: {
                   display: true,
-                  labels: { color: '#e0e0e0' }
+                  position: 'bottom',
+                  labels: {
+                    color: '#e0e0e0',
+                    boxWidth: 12,
+                    padding: 8,
+                    font: { size: 11 }
+                  },
+                  maxHeight: 60
+                },
+                tooltip: {
+                  mode: 'index',
+                  intersect: false,
+                  backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                  titleColor: '#fff',
+                  bodyColor: '#e0e0e0',
+                  borderColor: 'rgba(255, 255, 255, 0.2)',
+                  borderWidth: 1,
+                  padding: 10,
+                  callbacks: {
+                    label: function (ctx) {
+                      return ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString();
+                    }
+                  }
                 },
                 zoom: {
                   zoom: {
@@ -792,8 +859,13 @@
                   }
                 }
               },
+              interaction: {
+                mode: 'index',
+                intersect: false
+              },
               elements: {
-                point: { radius: 0 }
+                line: { borderWidth: 2.5 },
+                point: { radius: 0, hoverRadius: 5, hitRadius: 10 }
               }
             }
           });

@@ -25,8 +25,8 @@ const {
 
 // ── 3.1 Dark theme palette ─────────────────────────────────────────────────
 describe('DARK_PALETTE', () => {
-  it('contains exactly 10 colours', () => {
-    expect(DARK_PALETTE).toHaveLength(10);
+  it('contains exactly 20 colours', () => {
+    expect(DARK_PALETTE).toHaveLength(20);
   });
 
   it('every entry is a valid hex colour', () => {
@@ -723,28 +723,31 @@ describe('initStaticCharts — empty API fallback', () => {
 describe('selectRandomItems', () => {
   beforeEach(() => {
     selectedItems.clear();
-    Object.keys(chartData).forEach(k => delete chartData[k]);
+    const cd = chartsModule.chartData;
+    Object.keys(cd).forEach(k => delete cd[k]);
     chartsModule.itemsChart = { data: { datasets: [] }, update: vi.fn() };
     document.body.innerHTML = '<div id="itemsSelectedTags"></div>';
   });
 
-  it('selects exactly 20 items when allItemNames has >= 20 entries', () => {
+  it('selects exactly 10 items when allItemNames has >= 10 entries', () => {
     const names = Array.from({ length: 30 }, (_, i) => 'Item' + i);
     chartsModule.allItemNames = names;
+    const cd = chartsModule.chartData;
     for (const name of names) {
-      chartData[name] = [{ x: 1000, y: 1 }];
+      cd[name] = [{ x: 1000, y: 1 }];
     }
 
     selectRandomItems();
 
-    expect(selectedItems.size).toBe(20);
+    expect(selectedItems.size).toBe(10);
   });
 
   it('selects all items when allItemNames has fewer than 20 entries', () => {
     const names = ['A', 'B', 'C', 'D', 'E'];
     chartsModule.allItemNames = names;
+    const cd = chartsModule.chartData;
     for (const name of names) {
-      chartData[name] = [{ x: 1000, y: 1 }];
+      cd[name] = [{ x: 1000, y: 1 }];
     }
 
     selectRandomItems();
@@ -762,7 +765,7 @@ describe('selectRandomItems', () => {
 
   it('selects exactly 1 item when allItemNames has 1 entry', () => {
     chartsModule.allItemNames = ['SingleItem'];
-    chartData['SingleItem'] = [{ x: 1000, y: 1 }];
+    chartsModule.chartData['SingleItem'] = [{ x: 1000, y: 1 }];
 
     selectRandomItems();
 
@@ -773,8 +776,9 @@ describe('selectRandomItems', () => {
   it('after selectRandomItems, user can remove an item with toggleItemSelection', () => {
     const names = ['A', 'B', 'C', 'D', 'E'];
     chartsModule.allItemNames = names;
+    const cd = chartsModule.chartData;
     for (const name of names) {
-      chartData[name] = [{ x: 1000, y: 1 }];
+      cd[name] = [{ x: 1000, y: 1 }];
     }
 
     selectRandomItems();
@@ -789,8 +793,9 @@ describe('selectRandomItems', () => {
   it('after selectRandomItems, clearAllSelections empties everything', () => {
     const names = Array.from({ length: 10 }, (_, i) => 'Item' + i);
     chartsModule.allItemNames = names;
+    const cd = chartsModule.chartData;
     for (const name of names) {
-      chartData[name] = [{ x: 1000, y: 1 }];
+      cd[name] = [{ x: 1000, y: 1 }];
     }
 
     selectRandomItems();
