@@ -4,15 +4,16 @@ $stats = getGeneralStats();
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="night">
 
 <head>
   <meta charset="utf-8">
   <title>AO20 - Estadisticas</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="shortcut icon" href="/favicon.ico">
-  <!-- Bootstrap 5 Bootswatch Darkly theme CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/darkly/bootstrap.min.css" rel="stylesheet" integrity="sha384-t2UKecXY6tDoQIsEiNhYTaTFWmoHgQT7MV80h9huTejPYLkdgaOHv8ssDrS3Cdcw" crossorigin="anonymous">
+  <!-- DaisyUI 5 + Tailwind CSS 4 via CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@5/daisyui.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
   <link href="./css/cucsi.css" rel="stylesheet">
   
@@ -20,144 +21,183 @@ $stats = getGeneralStats();
 
 <body>
 
-  <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-    <div class="container">
-      <img src="img/logo.png" />
-      <h1>Estadisticas AO</h1>
+  <!-- DaisyUI Navbar -->
+  <nav class="navbar bg-base-100 shadow-lg fixed top-0 z-50">
+    <div class="max-w-7xl mx-auto w-full px-4 flex items-center gap-3">
+      <img src="img/logo.png" alt="AO20 Logo" />
+      <span class="text-xl font-bold">Estadísticas AO</span>
     </div>
   </nav>
 
-  <!-- Page Content -->
-
-  <!-- Blog Entries Column -->
-  <h1 class="my-4">Estadisticas del servidor</h1>
-
-  <div class="card mb-3">
-    <div class="card-header">Estadisticas generales</div>
-    <div class="card-body">
-      <table class="table table-personaje">
-        <tbody>
-          <tr>
-            <td>Cuentas creadas</td>
-            <td><?php echo !empty($stats['accounts']) ? $stats['accounts'] : '—'; ?></td>
-          </tr>
-          <tr>
-            <td>Personajes creados</td>
-            <td><?php echo !empty($stats['users']) ? $stats['users'] : '—'; ?></td>
-          </tr>
-        </tbody>
-      </table>
+  <!-- Section Navigation (sticky below navbar) -->
+  <div class="section-nav sticky top-16 z-40 bg-base-100 border-b border-base-300">
+    <div class="max-w-7xl mx-auto px-4">
+      <ul class="menu menu-horizontal flex-nowrap overflow-x-auto">
+        <li><a href="#section-general">General</a></li>
+        <li><a href="#section-personajes">Personajes</a></li>
+        <li><a href="#section-combate">Combate</a></li>
+        <li><a href="#section-economia">Economía</a></li>
+        <li><a href="#section-rankings">Rankings</a></li>
+        <li><a href="#section-comunidad">Comunidad</a></li>
+      </ul>
     </div>
   </div>
 
-  <div class="card mb-3">
-    <div class="card-header">Usuarios por clase</div>
-    <div class="card-body">
-      <div class="chart-container"><canvas id="chartUsuariosPorClase"></canvas></div>
-    </div>
-  </div>
+  <!-- Main Content Container -->
+  <main class="max-w-7xl mx-auto px-4 pt-8 pb-16">
 
-  <div class="card mb-3">
-    <div class="card-header">Clases por raza</div>
-    <div class="card-body">
-      <div class="chart-container"><canvas id="chartClasesPorRaza"></canvas></div>
-    </div>
-  </div>
+    <!-- Hero Heading -->
+    <h1 class="text-3xl font-bold mb-8">Estadísticas del Servidor</h1>
 
-  <div class="card mb-3">
-    <div class="card-header">Usuarios matados por clase</div>
-    <div class="card-body">
-      <div class="chart-container"><canvas id="chartUsuariosMatadosPorClase"></canvas></div>
-    </div>
-  </div>
-
-  <div class="card mb-3">
-    <div class="card-header">Usuarios por nivel</div>
-    <div class="card-body">
-      <div class="chart-container"><canvas id="chartUsuariosPorLevel"></canvas></div>
-    </div>
-  </div>
-
-  <div class="card mb-3">
-    <div class="card-header">Inflacion de Oro</div>
-    <div class="card-body">
-      <div class="chart-container"><canvas id="goldInflation"></canvas></div>
-    </div>
-  </div>
-
-  <div class="card mb-3">
-    <div class="card-header">Cantidad de items</div>
-    <div class="card-body">
-      <div class="chart-container"><canvas id="itemsQuantity"></canvas></div>
-      <div id="itemsSelectedTags" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 4px;"></div>
-      <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px; position: relative;">
-        <input type="text" id="itemsSearch" class="form-control" placeholder="Cargando datos de items..." style="max-width: 350px;" disabled />
-        <button id="itemsSearchClear" class="btn btn-secondary btn-sm" style="display:none;">&#x2715; Limpiar</button>
-        <span id="itemsSearchCount" style="color: #aaa; font-size: 0.9em;"></span>
-        <span id="itemsLimitMsg" style="color: #e74c3c; font-size: 0.85em; display: none;"></span>
+    <!-- Section: General -->
+    <section id="section-general" class="mb-16">
+      <h2 class="text-2xl font-semibold mb-6">General</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="stat bg-base-100 rounded-box shadow">
+          <div class="stat-title">Cuentas creadas</div>
+          <div class="stat-value"><?php echo !empty($stats['accounts']) ? $stats['accounts'] : '—'; ?></div>
+        </div>
+        <div class="stat bg-base-100 rounded-box shadow">
+          <div class="stat-title">Personajes creados</div>
+          <div class="stat-value"><?php echo !empty($stats['users']) ? $stats['users'] : '—'; ?></div>
+        </div>
       </div>
-      <div id="itemsResultsList" class="list-group" style="max-width: 350px; max-height: 250px; overflow-y: auto; display: none; margin-top: 4px;"></div>
-    </div>
-  </div>
+    </section>
 
-  <div class="card mb-3">
-    <div class="card-header">Distribución de ELO</div>
-    <div class="card-body">
-      <div class="chart-container"><canvas id="chartEloDistribution"></canvas></div>
-    </div>
-  </div>
+    <!-- Section: Personajes -->
+    <section id="section-personajes" class="mb-16">
+      <h2 class="text-2xl font-semibold mb-6">Personajes</h2>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="card bg-base-100 shadow">
+          <div class="card-body">
+            <h3 class="card-title">Usuarios por clase</h3>
+            <div class="chart-container chart-h-pie"><canvas id="chartUsuariosPorClase"></canvas></div>
+          </div>
+        </div>
+        <div class="card bg-base-100 shadow">
+          <div class="card-body">
+            <h3 class="card-title">Clases por raza</h3>
+            <div class="chart-container chart-h-column"><canvas id="chartClasesPorRaza"></canvas></div>
+          </div>
+        </div>
+        <div class="card bg-base-100 shadow">
+          <div class="card-body">
+            <h3 class="card-title">Usuarios por nivel</h3>
+            <div class="chart-container chart-h-column"><canvas id="chartUsuariosPorLevel"></canvas></div>
+          </div>
+        </div>
+        <div class="card bg-base-100 shadow">
+          <div class="card-body">
+            <h3 class="card-title">Distribución de Género</h3>
+            <div class="chart-container chart-h-pie"><canvas id="chartGenderDistribution"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-  <div class="card mb-3">
-    <div class="card-header">Top Guilds</div>
-    <div class="card-body">
-      <div class="chart-container"><canvas id="chartTopGuilds"></canvas></div>
-    </div>
-  </div>
+    <!-- Section: Combate -->
+    <section id="section-combate" class="mb-16">
+      <h2 class="text-2xl font-semibold mb-6">Combate</h2>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="card bg-base-100 shadow">
+          <div class="card-body">
+            <h3 class="card-title">Usuarios matados por clase</h3>
+            <div class="chart-container chart-h-bar"><canvas id="chartUsuariosMatadosPorClase"></canvas></div>
+          </div>
+        </div>
+        <div class="card bg-base-100 shadow">
+          <div class="card-body">
+            <h3 class="card-title">Distribución de ELO</h3>
+            <div class="chart-container chart-h-column"><canvas id="chartEloDistribution"></canvas></div>
+          </div>
+        </div>
+        <div class="card bg-base-100 shadow">
+          <div class="card-body">
+            <h3 class="card-title">Ratio K/D por Clase</h3>
+            <div class="chart-container chart-h-bar"><canvas id="chartKdRatio"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-  <div class="card mb-3">
-    <div class="card-header">Distribución de Oro por Nivel</div>
-    <div class="card-body">
-      <div class="chart-container"><canvas id="chartGoldByLevel"></canvas></div>
-    </div>
-  </div>
+    <!-- Section: Economía -->
+    <section id="section-economia" class="mb-16">
+      <h2 class="text-2xl font-semibold mb-6">Economía</h2>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="card bg-base-100 shadow lg:col-span-2">
+          <div class="card-body">
+            <h3 class="card-title">Inflación de Oro</h3>
+            <div class="chart-container chart-h-timeseries"><canvas id="goldInflation"></canvas></div>
+          </div>
+        </div>
+        <div class="card bg-base-100 shadow">
+          <div class="card-body">
+            <h3 class="card-title">Distribución de Oro por Nivel</h3>
+            <div class="chart-container chart-h-column"><canvas id="chartGoldByLevel"></canvas></div>
+          </div>
+        </div>
+        <div class="card bg-base-100 shadow lg:col-span-2">
+          <div class="card-body">
+            <h3 class="card-title">Cantidad de items</h3>
+            <div class="chart-container chart-h-timeseries"><canvas id="itemsQuantity"></canvas></div>
+            <div id="itemsSelectedTags" class="mt-2.5 flex flex-wrap gap-1"></div>
+            <div class="mt-2.5 flex items-center gap-2 relative">
+              <input type="text" id="itemsSearch" class="input input-bordered w-full max-w-xs" placeholder="Cargando datos de items..." disabled />
+              <button id="itemsSearchClear" class="btn btn-secondary btn-sm hidden">&#x2715; Limpiar</button>
+              <span id="itemsSearchCount" class="text-base-content/60 text-sm"></span>
+              <span id="itemsLimitMsg" class="text-error text-sm hidden font-medium"></span>
+            </div>
+            <div id="itemsResultsList" class="max-w-xs max-h-64 overflow-y-auto hidden mt-1"></div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-  <div class="card mb-3">
-    <div class="card-header">Ratio K/D por Clase</div>
-    <div class="card-body">
-      <div class="chart-container"><canvas id="chartKdRatio"></canvas></div>
-    </div>
-  </div>
+    <!-- Section: Rankings -->
+    <section id="section-rankings" class="mb-16">
+      <h2 class="text-2xl font-semibold mb-6">Rankings</h2>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="card bg-base-100 shadow">
+          <div class="card-body">
+            <h3 class="card-title">Top Guilds</h3>
+            <div class="chart-container chart-h-bar-tall"><canvas id="chartTopGuilds"></canvas></div>
+          </div>
+        </div>
+        <div class="card bg-base-100 shadow">
+          <div class="card-body">
+            <h3 class="card-title">Leaderboard de Pesca</h3>
+            <div class="chart-container chart-h-bar-tall"><canvas id="chartFishingLeaderboard"></canvas></div>
+          </div>
+        </div>
+        <div class="card bg-base-100 shadow">
+          <div class="card-body">
+            <h3 class="card-title">Top Cazadores de NPCs</h3>
+            <div class="chart-container chart-h-bar-tall"><canvas id="chartTopNpcHunters"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-  <div class="card mb-3">
-    <div class="card-header">Resumen de Facciones</div>
-    <div class="card-body">
-      <div class="chart-container"><canvas id="chartFactionSummary"></canvas></div>
-    </div>
-  </div>
+    <!-- Section: Comunidad -->
+    <section id="section-comunidad" class="mb-16">
+      <h2 class="text-2xl font-semibold mb-6">Comunidad</h2>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="card bg-base-100 shadow lg:col-span-2">
+          <div class="card-body">
+            <h3 class="card-title">Resumen de Facciones</h3>
+            <div class="chart-container chart-h-column"><canvas id="chartFactionSummary"></canvas></div>
+          </div>
+        </div>
+        <div class="card bg-base-100 shadow">
+          <div class="card-body">
+            <h3 class="card-title">Steam</h3>
+            <iframe src="https://steamdb.info/embed/?appid=1956740" height="389" class="border-0 w-full" loading="lazy"></iframe>
+          </div>
+        </div>
+      </div>
+    </section>
 
-  <div class="card mb-3">
-    <div class="card-header">Leaderboard de Pesca</div>
-    <div class="card-body">
-      <div class="chart-container"><canvas id="chartFishingLeaderboard"></canvas></div>
-    </div>
-  </div>
-
-  <div class="card mb-3">
-    <div class="card-header">Distribución de Género</div>
-    <div class="card-body">
-      <div class="chart-container"><canvas id="chartGenderDistribution"></canvas></div>
-    </div>
-  </div>
-
-  <div class="card mb-3">
-    <div class="card-header">Top Cazadores de NPCs</div>
-    <div class="card-body">
-      <div class="chart-container"><canvas id="chartTopNpcHunters"></canvas></div>
-    </div>
-  </div>
-
-  <iframe src="https://steamdb.info/embed/?appid=1956740" height="389" style="border:0;overflow:hidden;width:100%" loading="lazy"></iframe>
+  </main>
 
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js" integrity="sha384-XcdcwHqIPULERb2yDEM4R0XaQKU3YnDsrTmjACBZyfdVVqjh6xQ4/DCMd7XLcA6Y" crossorigin="anonymous" defer></script>
@@ -167,10 +207,13 @@ $stats = getGeneralStats();
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js" integrity="sha384-dwwI6ICEN/0ZQlS5owhUa/6ZzvwUPmjH45bFVCAcjgjTulbHJvlE+TGU3g1k0N3R" crossorigin="anonymous" defer></script>
   <!-- chartjs-adapter-date-fns (required for time scale) -->
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js" crossorigin="anonymous" defer></script>
-  <!-- Bootstrap 5 bundle (includes Popper) -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous" defer></script>
-  <!-- Charts module -->
-  <script src="./js/charts.js" defer></script>
+  <!-- AO20 modular scripts -->
+  <script src="./js/config.js" defer></script>
+  <script src="./js/data-utils.js" defer></script>
+  <script src="./js/renderers.js" defer></script>
+  <script src="./js/items-filter.js" defer></script>
+  <script src="./js/navigation.js" defer></script>
+  <script src="./js/init.js" defer></script>
 </body>
 
 </html>

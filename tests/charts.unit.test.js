@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-// Mock Chart.js globally before requiring charts.js
-const mockChartInstance = { destroy: vi.fn() };
+// Mock Chart.js globally before requiring any module
+const mockChartInstance = { destroy: vi.fn(), update: vi.fn(), data: { datasets: [] } };
 const MockChart = vi.fn(() => mockChartInstance);
 MockChart.defaults = {
   color: '',
@@ -11,17 +11,29 @@ MockChart.defaults = {
 };
 globalThis.Chart = MockChart;
 
-// charts.js uses an IIFE with module.exports for testing
-const chartsModule = require('../js/charts.js');
-const {
-  normalizeStr, downsampleDaily, showLoading, showError, DARK_PALETTE,
-  renderPieChart, renderColumnChart, renderBarChart, renderLineChart,
-  toggleItemSelection, selectedItems, MAX_SELECTED,
-  bucketValues, topN, guildAlignmentColor, computeKdRatio, computeProgressPercent,
-  renderGuildChart, renderFactionChart, initStaticCharts,
-  selectRandomItems, DEFAULT_RANDOM_COUNT, clearAllSelections,
-  chartData, updateItemsChart, updateSelectedTags
-} = chartsModule;
+// Load AO20 namespace modules in order: config → data-utils → renderers → items-filter
+const AO20 = require('../js/config.js');
+globalThis.AO20 = AO20;
+require('../js/data-utils.js');
+require('../js/renderers.js');
+require('../js/items-filter.js');
+
+// Map old flat exports to the new AO20 namespace structure
+const { normalizeStr, downsampleDaily, filterBeforeDate, bucketValues, topN, guildAlignmentColor, computeKdRatio, computeProgressPercent } = AO20.utils;
+const showLoading = AO20.renderers.showLoading.bind(AO20.renderers);
+const showError = AO20.renderers.showError.bind(AO20.renderers);
+const renderPieChart = AO20.renderers.renderPieChart.bind(AO20.renderers);
+const renderColumnChart = AO20.renderers.renderColumnChart.bind(AO20.renderers);
+const renderBarChart = AO20.renderers.renderBarChart.bind(AO20.renderers);
+const renderLineChart = AO20.renderers.renderLineChart.bind(AO20.renderers);
+const renderGuildChart = AO20.renderers.renderGuildChart.bind(AO20.renderers);
+const renderFactionChart = AO20.renderers.renderFactionChart.bind(AO20.renderers);
+const initStaticCharts = AO20.renderers.initStaticCharts.bind(AO20.renderers);
+const { toggleItemSelection, selectedItems, updateItemsChart, updateSelectedTags, clearAllSelections, selectRandomItems } = AO20.itemsFilter;
+const { DARK_PALETTE, MAX_SELECTED, DEFAULT_RANDOM_COUNT, MIN_DATE } = AO20.config;
+
+// Compatibility shim: chartsModule-like object for tests that access chartData/allItemNames/itemsChart
+const chartsModule = AO20.itemsFilter;
 
 // ── 3.1 Dark theme palette ─────────────────────────────────────────────────
 describe('DARK_PALETTE', () => {
@@ -803,5 +815,79 @@ describe('selectRandomItems', () => {
 
     clearAllSelections();
     expect(selectedItems.size).toBe(0);
+  });
+});
+
+// ── 1.4 filterBeforeDate (AO20.utils) ──────────────────────────────────────
+describe('filterBeforeDate', () => {
+  /**
+   * Validates: Requirements 7.2, 7.3, 7.4
+   */
+
+  it('keeps points after MIN_DATE and removes points before it', () => {
+    const before = new Date('2024-09-01T00:00:00Z').getTime();
+    const on = MIN_DATE.getTime();
+    const after = new Date('2024-10-15T00:00:00Z').getTime();
+
+    const points = [
+      { x: before, y: 10 },
+      { x: on, y: 20 },
+      { x: after, y: 30 },
+    ];
+
+    const result = filterBeforeDate(points, MIN_DATE);
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual({ x: on, y: 20 });
+    expect(result[1]).toEqual({ x: after, y: 30 });
+  });
+
+  it('returns empty array for empty input', () => {
+    expect(filterBeforeDate([], MIN_DATE)).toEqual([]);
+  });
+
+  it('returns empty array when all points are before MIN_DATE', () => {
+    const points = [
+      { x: new Date('2024-01-01T00:00:00Z').getTime(), y: 1 },
+      { x: new Date('2024-06-15T00:00:00Z').getTime(), y: 2 },
+      { x: new Date('2024-09-28T23:59:59Z').getTime(), y: 3 },
+    ];
+
+    const result = filterBeforeDate(points, MIN_DATE);
+    expect(result).toEqual([]);
+  });
+
+  it('returns all points when all are after MIN_DATE', () => {
+    const points = [
+      { x: new Date('2024-10-01T00:00:00Z').getTime(), y: 100 },
+      { x: new Date('2024-11-01T00:00:00Z').getTime(), y: 200 },
+      { x: new Date('2025-01-01T00:00:00Z').getTime(), y: 300 },
+    ];
+
+    const result = filterBeforeDate(points, MIN_DATE);
+    expect(result).toHaveLength(3);
+    expect(result).toEqual(points);
+  });
+
+  it('includes points exactly on the MIN_DATE boundary', () => {
+    const exactlyOnDate = MIN_DATE.getTime();
+    const points = [{ x: exactlyOnDate, y: 42 }];
+
+    const result = filterBeforeDate(points, MIN_DATE);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({ x: exactlyOnDate, y: 42 });
+  });
+
+  it('works with a custom minDate (not just MIN_DATE)', () => {
+    const customDate = new Date('2025-01-01T00:00:00Z');
+    const points = [
+      { x: new Date('2024-12-31T23:59:59Z').getTime(), y: 1 },
+      { x: new Date('2025-01-01T00:00:00Z').getTime(), y: 2 },
+      { x: new Date('2025-06-01T00:00:00Z').getTime(), y: 3 },
+    ];
+
+    const result = filterBeforeDate(points, customDate);
+    expect(result).toHaveLength(2);
+    expect(result[0].y).toBe(2);
+    expect(result[1].y).toBe(3);
   });
 });

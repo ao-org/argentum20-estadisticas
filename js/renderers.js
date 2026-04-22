@@ -1,41 +1,12 @@
-(function () {
-  'use strict';
+/**
+ * js/renderers.js — Chart render functions under AO20.renderers.
+ *
+ * Must be loaded after js/config.js and js/data-utils.js.
+ */
+AO20.renderers = {
 
-  // ── 3.1 Dark theme defaults ──────────────────────────────────────────────
-  var DARK_PALETTE = [
-    '#e74c3c', // red
-    '#3498db', // blue
-    '#2ecc71', // emerald
-    '#f39c12', // orange
-    '#9b59b6', // purple
-    '#1abc9c', // teal
-    '#e67e22', // dark orange
-    '#00bc8c', // green
-    '#fd7e14', // bright orange
-    '#375a7f', // navy
-    '#e84393', // pink
-    '#00cec9', // cyan
-    '#fdcb6e', // yellow
-    '#6c5ce7', // indigo
-    '#d63031', // crimson
-    '#74b9ff', // light blue
-    '#a29bfe', // lavender
-    '#55efc4', // mint
-    '#fab1a0', // salmon
-    '#81ecec'  // aqua
-  ];
-
-  if (typeof Chart !== 'undefined') {
-    Chart.defaults.color = '#e0e0e0';
-    Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
-    Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-    Chart.defaults.plugins.legend.labels.color = '#e0e0e0';
-    Chart.defaults.scale.grid = Chart.defaults.scale.grid || {};
-    Chart.defaults.scale.grid.color = 'rgba(255, 255, 255, 0.1)';
-  }
-
-  // ── 3.2 Loading / error helpers ──────────────────────────────────────────
-  function showLoading(containerId) {
+  // ── Loading / error helpers ────────────────────────────────────────────
+  showLoading: function (containerId) {
     var canvas = document.getElementById(containerId);
     if (!canvas) return;
     var container = canvas.parentNode;
@@ -43,9 +14,9 @@
     loader.className = 'chart-loading';
     loader.textContent = 'Cargando...';
     container.insertBefore(loader, canvas);
-  }
+  },
 
-  function showError(containerId, msg) {
+  showError: function (containerId, msg) {
     var canvas = document.getElementById(containerId);
     if (!canvas) return;
     var container = canvas.parentNode;
@@ -55,87 +26,14 @@
     err.className = 'chart-error';
     err.textContent = msg || 'No se pudieron cargar las estadísticas.';
     container.appendChild(err);
-  }
+  },
 
-  // ── 3.3 String normalisation (accent / case insensitive) ─────────────────
-  function normalizeStr(str) {
-    return str
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // strip combining diacriticals
-      .replace(/ñ/g, 'n')
-      .replace(/ü/g, 'u');
-  }
-
-  // ── 3.4 Downsample to one point per calendar day ─────────────────────────
-  function downsampleDaily(points) {
-    if (!points || points.length === 0) return [];
-
-    // Sort a copy by timestamp ascending so the last one we see per day is
-    // the chronologically latest.
-    var sorted = points.slice().sort(function (a, b) { return a.x - b.x; });
-
-    var byDay = {};
-    sorted.forEach(function (p) {
-      var d = new Date(p.x);
-      var key = d.getUTCFullYear() + '-' + (d.getUTCMonth() + 1) + '-' + d.getUTCDate();
-      byDay[key] = p; // overwrite → keeps last chronological point
-    });
-
-    return Object.values(byDay).sort(function (a, b) { return a.x - b.x; });
-  }
-
-  // ── 4.1 Pure helper functions ──────────────────────────────────────────────
-
-  function bucketValues(values, width) {
-    var buckets = {};
-    var starts = [];
-    for (var i = 0; i < values.length; i++) {
-      var start = Math.floor(values[i] / width) * width;
-      if (!(start in buckets)) {
-        buckets[start] = 0;
-        starts.push(start);
-      }
-      buckets[start]++;
-    }
-    starts.sort(function (a, b) { return a - b; });
-    var result = [];
-    for (var j = 0; j < starts.length; j++) {
-      var s = starts[j];
-      result.push({ bucket: s + '-' + (s + width - 1), count: buckets[s] });
-    }
-    return result;
-  }
-
-  function topN(items, scoreKey, n) {
-    var copy = items.slice();
-    copy.sort(function (a, b) { return b[scoreKey] - a[scoreKey]; });
-    return copy.slice(0, n);
-  }
-
-  function guildAlignmentColor(alignment) {
-    if (alignment === 1) return '#00bc8c';
-    if (alignment === 2) return '#e74c3c';
-    return '#6c757d';
-  }
-
-  function computeKdRatio(kills, deaths) {
-    if (deaths > 0) return kills / deaths;
-    return kills;
-  }
-
-  function computeProgressPercent(current, threshold) {
-    if (threshold === 0) return 0;
-    return Math.min(100, (current / threshold) * 100);
-  }
-
-  // ── 5.1 Pie chart — users by class ────────────────────────────────────────
-  function renderPieChart(id, data) {
+  // ── Pie chart ──────────────────────────────────────────────────────────
+  renderPieChart: function (id, data) {
     var canvas = document.getElementById(id);
     if (!canvas) return null;
     var container = canvas.parentNode;
 
-    // Remove any loading indicator
     var loading = container.querySelector('.chart-loading');
     if (loading) loading.remove();
 
@@ -153,7 +51,7 @@
         labels: data.map(function (d) { return d.name; }),
         datasets: [{
           data: data.map(function (d) { return d.y; }),
-          backgroundColor: DARK_PALETTE.slice(0, data.length)
+          backgroundColor: AO20.config.DARK_PALETTE.slice(0, data.length)
         }]
       },
       options: {
@@ -175,10 +73,10 @@
         }
       }
     });
-  }
+  },
 
-  // ── 5.2 Column (vertical bar) chart — classes by race / online by hour ──
-  function renderColumnChart(id, seriesData, categories) {
+  // ── Column (vertical bar) chart ────────────────────────────────────────
+  renderColumnChart: function (id, seriesData, categories) {
     var canvas = document.getElementById(id);
     if (!canvas) return null;
     var container = canvas.parentNode;
@@ -194,20 +92,19 @@
       return null;
     }
 
-    // Normalise: if seriesData is a plain number array, wrap it as a single series
     var datasets;
     if (Array.isArray(seriesData) && typeof seriesData[0] === 'number') {
       datasets = [{
         label: '',
         data: seriesData,
-        backgroundColor: DARK_PALETTE[0]
+        backgroundColor: AO20.config.DARK_PALETTE[0]
       }];
     } else {
       datasets = seriesData.map(function (s, i) {
         return {
           label: s.name,
           data: s.data,
-          backgroundColor: DARK_PALETTE[i % DARK_PALETTE.length]
+          backgroundColor: AO20.config.DARK_PALETTE[i % AO20.config.DARK_PALETTE.length]
         };
       });
     }
@@ -244,10 +141,10 @@
         }
       }
     });
-  }
+  },
 
-  // ── 5.3 Horizontal bar chart — kills by class ───────────────────────────
-  function renderBarChart(id, data) {
+  // ── Horizontal bar chart ───────────────────────────────────────────────
+  renderBarChart: function (id, data) {
     var canvas = document.getElementById(id);
     if (!canvas) return null;
     var container = canvas.parentNode;
@@ -270,7 +167,7 @@
         datasets: [{
           label: 'Usuarios Matados',
           data: data.map(function (d) { return d.y; }),
-          backgroundColor: DARK_PALETTE[0]
+          backgroundColor: AO20.config.DARK_PALETTE[0]
         }]
       },
       options: {
@@ -300,10 +197,10 @@
         }
       }
     });
-  }
+  },
 
-  // ── 5.4 Line chart — users by level ─────────────────────────────────────
-  function renderLineChart(id, data) {
+  // ── Line chart ─────────────────────────────────────────────────────────
+  renderLineChart: function (id, data) {
     var canvas = document.getElementById(id);
     if (!canvas) return null;
     var container = canvas.parentNode;
@@ -319,7 +216,6 @@
       return null;
     }
 
-    // Generate labels starting at level 1
     var labels = data.map(function (_, i) { return i + 1; });
 
     return new Chart(canvas, {
@@ -329,7 +225,7 @@
         datasets: [{
           label: 'Cantidad de usuarios',
           data: data,
-          borderColor: DARK_PALETTE[0],
+          borderColor: AO20.config.DARK_PALETTE[0],
           backgroundColor: 'rgba(55, 90, 127, 0.2)',
           fill: true,
           tension: 0.1,
@@ -360,10 +256,10 @@
         }
       }
     });
-  }
+  },
 
-  // ── 5.5 Guild chart — horizontal bar with alignment colors ────────────────
-  function renderGuildChart(id, data) {
+  // ── Guild chart — horizontal bar with alignment colors ─────────────────
+  renderGuildChart: function (id, data) {
     var canvas = document.getElementById(id);
     if (!canvas) return null;
     var container = canvas.parentNode;
@@ -386,7 +282,7 @@
         datasets: [{
           label: 'Miembros',
           data: data.map(function (d) { return d.members; }),
-          backgroundColor: data.map(function (d) { return guildAlignmentColor(d.alignment); })
+          backgroundColor: data.map(function (d) { return AO20.utils.guildAlignmentColor(d.alignment); })
         }]
       },
       options: {
@@ -417,10 +313,10 @@
         }
       }
     });
-  }
+  },
 
-  // ── 5.6 Faction chart — grouped bar Real vs Caos ─────────────────────────
-  function renderFactionChart(id, data) {
+  // ── Faction chart — grouped bar Real vs Caos ──────────────────────────
+  renderFactionChart: function (id, data) {
     var canvas = document.getElementById(id);
     if (!canvas) return null;
     var container = canvas.parentNode;
@@ -482,11 +378,12 @@
         }
       }
     });
-  }
+  },
 
-  // ── 6.1 Gold inflation time-series chart ──────────────────────────────────
-  function renderGoldInflationChart(id) {
-    showLoading(id);
+  // ── Gold inflation time-series chart ───────────────────────────────────
+  renderGoldInflationChart: function (id) {
+    var self = this;
+    self.showLoading(id);
 
     fetch('https://api.ao20.com.ar:2083/statistics/getGoldStatistics')
       .then(function (response) {
@@ -508,7 +405,24 @@
           return;
         }
 
-        var labels = data.map(function (a) {
+        // Convert to {x, y} points and filter by MIN_DATE
+        var minDate = AO20.config.MIN_DATE;
+        var allPoints = data.map(function (a) {
+          return { x: new Date(a.datetime).getTime(), y: a };
+        });
+        var filtered = AO20.utils.filterBeforeDate(allPoints, minDate);
+
+        if (filtered.length === 0) {
+          var noData = document.createElement('div');
+          noData.className = 'chart-error';
+          noData.textContent = 'No hay datos disponibles.';
+          container.appendChild(noData);
+          return;
+        }
+
+        var filteredData = filtered.map(function (p) { return p.y; });
+
+        var labels = filteredData.map(function (a) {
           var d = new Date(a.datetime);
           return (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear() + ' ' + d.getHours() + ':' + d.getMinutes();
         });
@@ -524,8 +438,8 @@
         var datasets = seriesDefs.map(function (s, i) {
           return {
             label: s.label,
-            data: data.map(function (a) { return a[s.key]; }),
-            borderColor: DARK_PALETTE[i % DARK_PALETTE.length],
+            data: filteredData.map(function (a) { return a[s.key]; }),
+            borderColor: AO20.config.DARK_PALETTE[i % AO20.config.DARK_PALETTE.length],
             backgroundColor: 'transparent',
             fill: false,
             tension: 0.1,
@@ -617,156 +531,15 @@
         });
       })
       .catch(function () {
-        showError(id, 'No se pudieron cargar las estadísticas.');
+        self.showError(id, 'No se pudieron cargar las estadísticas.');
       });
-  }
+  },
 
-  // ── 6.2 Items quantity time-series chart ─────────────────────────────────
-  // Closure variables shared with applyItemsFilter (6.3)
-  var chartData = {};
-  var allItemNames = [];
-  var itemsChart = null;
-  var selectedItems = new Set();
-  var MAX_SELECTED = 20;
-  var DEFAULT_RANDOM_COUNT = 10;
-
-  function updateSelectedTags() {
-    var container = document.getElementById('itemsSelectedTags');
-    if (!container) return;
-    container.innerHTML = '';
-
-    selectedItems.forEach(function (name) {
-      var badge = document.createElement('span');
-      badge.className = 'badge bg-primary me-1 mb-1';
-      badge.textContent = name;
-
-      var btn = document.createElement('button');
-      btn.className = 'btn-close btn-close-white ms-1';
-      btn.setAttribute('aria-label', 'Quitar');
-      btn.style.fontSize = '0.55em';
-      btn.addEventListener('click', function () {
-        toggleItemSelection(name);
-      });
-
-      badge.appendChild(btn);
-      container.appendChild(badge);
-    });
-  }
-
-  function clearAllSelections() {
-    selectedItems.clear();
-    updateItemsChart();
-    updateSelectedTags();
-
-    var resultsList = document.getElementById('itemsResultsList');
-    if (resultsList) {
-      resultsList.style.display = 'none';
-    }
-
-    var limitMsg = document.getElementById('itemsLimitMsg');
-    if (limitMsg) {
-      limitMsg.textContent = '';
-      limitMsg.style.display = 'none';
-    }
-  }
-
-  function updateItemsChart() {
-    if (!itemsChart) return;
-
-    itemsChart.data.datasets = [];
-
-    var colorIdx = 0;
-    selectedItems.forEach(function (name) {
-      var pts = chartData[name];
-      if (pts) {
-        itemsChart.data.datasets.push({
-          label: name,
-          data: pts,
-          borderColor: DARK_PALETTE[colorIdx % DARK_PALETTE.length],
-          backgroundColor: 'transparent',
-          fill: false,
-          tension: 0.1,
-          pointRadius: 0
-        });
-        colorIdx++;
-      }
-    });
-
-    itemsChart.update();
-  }
-
-  function toggleItemSelection(itemName) {
-    if (selectedItems.has(itemName)) {
-      selectedItems.delete(itemName);
-    } else if (selectedItems.size < MAX_SELECTED) {
-      selectedItems.add(itemName);
-    } else {
-      // Show limit message
-      var limitMsg = document.getElementById('itemsLimitMsg');
-      if (limitMsg) {
-        limitMsg.textContent = 'Se alcanzó el límite máximo de ' + MAX_SELECTED + ' items.';
-        limitMsg.style.display = '';
-        setTimeout(function () {
-          limitMsg.style.display = 'none';
-          limitMsg.textContent = '';
-        }, 2000);
-      }
-      return;
-    }
-
-    updateItemsChart();
-    updateSelectedTags();
-
-    // Update visual state in results list if visible
-    var resultsList = document.getElementById('itemsResultsList');
-    if (resultsList) {
-      var items = resultsList.querySelectorAll('.list-group-item');
-      for (var i = 0; i < items.length; i++) {
-        if (items[i].textContent === itemName) {
-          if (selectedItems.has(itemName)) {
-            items[i].classList.add('active');
-          } else {
-            items[i].classList.remove('active');
-          }
-          break;
-        }
-      }
-    }
-  }
-
-  function selectRandomItems() {
-    if (allItemNames.length === 0) return;
-
-    // Filter to items that have meaningful data (max value > 0)
-    var candidates = allItemNames.filter(function (name) {
-      var pts = chartData[name];
-      if (!pts || pts.length === 0) return false;
-      var maxVal = 0;
-      for (var i = 0; i < pts.length; i++) {
-        if (pts[i].y > maxVal) maxVal = pts[i].y;
-      }
-      return maxVal > 0;
-    });
-
-    if (candidates.length === 0) return;
-
-    var k = Math.min(candidates.length, DEFAULT_RANDOM_COUNT);
-    var copy = candidates.slice();
-    for (var i = copy.length - 1; i > copy.length - 1 - k; i--) {
-      var j = Math.floor(Math.random() * (i + 1));
-      var temp = copy[i];
-      copy[i] = copy[j];
-      copy[j] = temp;
-    }
-    for (var n = copy.length - k; n < copy.length; n++) {
-      selectedItems.add(copy[n]);
-    }
-    updateItemsChart();
-    updateSelectedTags();
-  }
-
-  function renderItemsChart(id) {
-    showLoading(id);
+  // ── Items quantity time-series chart (rendering only) ──────────────────
+  // Note: Items filter UI logic (search, selection, tags) lives in items-filter.js
+  renderItemsChart: function (id) {
+    var self = this;
+    self.showLoading(id);
 
     fetch('https://api.ao20.com.ar:2083/statistics/getItemsStatistics')
       .then(function (response) {
@@ -795,7 +568,7 @@
         var datetimeKey = 'datetime' in sample ? 'datetime' : 'date';
 
         // Group data by item name
-        chartData = {};
+        var chartData = {};
         data.forEach(function (item) {
           var name = item[nameKey];
           if (!name) return;
@@ -806,35 +579,38 @@
           });
         });
 
-        allItemNames = Object.keys(chartData);
+        var allItemNames = Object.keys(chartData);
 
-        // Apply downsampleDaily to each item's data
+        // Apply filterBeforeDate and downsampleDaily to each item's data
+        var minDate = AO20.config.MIN_DATE;
         Object.keys(chartData).forEach(function (name) {
-          chartData[name] = downsampleDaily(chartData[name]);
+          chartData[name] = AO20.utils.filterBeforeDate(chartData[name], minDate);
+          chartData[name] = AO20.utils.downsampleDaily(chartData[name]);
         });
 
-        // Create chart with no datasets — series added via search filter
-        try {
-          // Crosshair plugin — draws a vertical line at the hovered x position
-          var crosshairPlugin = {
-            id: 'itemsCrosshair',
-            afterDraw: function (chart) {
-              if (chart.tooltip && chart.tooltip._active && chart.tooltip._active.length) {
-                var x = chart.tooltip._active[0].element.x;
-                var yAxis = chart.scales.y;
-                var ctx = chart.ctx;
-                ctx.save();
-                ctx.beginPath();
-                ctx.moveTo(x, yAxis.top);
-                ctx.lineTo(x, yAxis.bottom);
-                ctx.lineWidth = 1;
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-                ctx.stroke();
-                ctx.restore();
-              }
+        // Crosshair plugin
+        var crosshairPlugin = {
+          id: 'itemsCrosshair',
+          afterDraw: function (chart) {
+            if (chart.tooltip && chart.tooltip._active && chart.tooltip._active.length) {
+              var x = chart.tooltip._active[0].element.x;
+              var yAxis = chart.scales.y;
+              var ctx = chart.ctx;
+              ctx.save();
+              ctx.beginPath();
+              ctx.moveTo(x, yAxis.top);
+              ctx.lineTo(x, yAxis.bottom);
+              ctx.lineWidth = 1;
+              ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+              ctx.stroke();
+              ctx.restore();
             }
-          };
+          }
+        };
 
+        // Create chart with no datasets — series added via items-filter.js
+        var itemsChart;
+        try {
           itemsChart = new Chart(canvas, {
             type: 'line',
             data: {
@@ -915,136 +691,35 @@
               }
             }
           });
-
-          // Wire up search/filter event listeners
-          var searchInput = document.getElementById('itemsSearch');
-          var clearBtn = document.getElementById('itemsSearchClear');
-          if (searchInput) {
-            searchInput.disabled = false;
-            searchInput.placeholder = 'Buscar items (ej: leña barca mineral)';
-            searchInput.addEventListener('input', function () {
-              applyItemsFilter(searchInput.value);
-            });
-          }
-          if (clearBtn) {
-            clearBtn.addEventListener('click', function () {
-              if (searchInput) searchInput.value = '';
-              clearAllSelections();
-              var countEl = document.getElementById('itemsSearchCount');
-              if (countEl) countEl.textContent = '';
-            });
-          }
         } catch (e) {
           console.error('Error creating items chart:', e);
-          showError(id, 'No se pudieron cargar las estadísticas.');
+          self.showError(id, 'No se pudieron cargar las estadísticas.');
           return;
         }
 
-        requestAnimationFrame(function () {
-          try {
-            selectRandomItems();
-          } catch (e2) {
-            console.error('Error selecting random items:', e2);
-          }
-        });
+        // Expose data for items-filter.js to consume
+        AO20.renderers._itemsChartData = chartData;
+        AO20.renderers._allItemNames = allItemNames;
+        AO20.renderers._itemsChart = itemsChart;
+
+        // If items-filter module is loaded, let it initialize
+        if (AO20.itemsFilter && typeof AO20.itemsFilter.init === 'function') {
+          AO20.itemsFilter.init(chartData, allItemNames, itemsChart);
+        }
       })
       .catch(function () {
-        showError(id, 'No se pudieron cargar las estadísticas.');
+        self.showError(id, 'No se pudieron cargar las estadísticas.');
       });
-  }
+  },
 
-  // ── 6.3 Items search/filter ──────────────────────────────────────────────
-  function applyItemsFilter(query) {
-    var terms = normalizeStr(query.trim()).split(/\s+/).filter(function (t) { return t.length >= 2; });
+  // ── Static charts orchestration ────────────────────────────────────────
+  initStaticCharts: function () {
+    var self = this;
+    var STATIC_CHART_IDS = AO20.config.STATIC_CHART_IDS;
+    var CLASS_CATEGORIES = AO20.config.CLASS_CATEGORIES;
 
-    var resultsList = document.getElementById('itemsResultsList');
-    var countEl = document.getElementById('itemsSearchCount');
-    var clearBtn = document.getElementById('itemsSearchClear');
-
-    // If query has no valid terms (< 2 chars each): hide list, show guide text
-    if (terms.length === 0) {
-      if (resultsList) {
-        resultsList.innerHTML = '';
-        resultsList.style.display = 'none';
-      }
-      if (countEl) countEl.textContent = query.trim().length > 0 ? 'Escribí al menos 2 caracteres para buscar' : '';
-      if (clearBtn) clearBtn.style.display = query.trim().length > 0 ? '' : 'none';
-      return;
-    }
-
-    // Filter allItemNames using normalizeStr
-    var matched = allItemNames.filter(function (name) {
-      var n = normalizeStr(name);
-      return terms.some(function (t) { return n.indexOf(t) !== -1; });
-    });
-
-    // Show clear button when there's a query
-    if (clearBtn) clearBtn.style.display = '';
-
-    // Update counter with appropriate format
-    if (countEl) {
-      if (matched.length > MAX_SELECTED) {
-        countEl.textContent = 'Mostrando ' + MAX_SELECTED + ' de ' + matched.length + ' resultados';
-      } else {
-        countEl.textContent = matched.length + ' resultado' + (matched.length !== 1 ? 's' : '') + ' de ' + allItemNames.length + ' items';
-      }
-    }
-
-    // Populate results list (max 20 visible)
-    if (resultsList) {
-      resultsList.innerHTML = '';
-
-      if (matched.length === 0) {
-        resultsList.style.display = 'none';
-        return;
-      }
-
-      var visible = matched.slice(0, MAX_SELECTED);
-      visible.forEach(function (name) {
-        var a = document.createElement('a');
-        a.className = 'list-group-item list-group-item-action';
-        if (selectedItems.has(name)) {
-          a.classList.add('active');
-        }
-        a.textContent = name;
-        a.href = '#';
-        a.addEventListener('click', function (e) {
-          e.preventDefault();
-          toggleItemSelection(name);
-          // Re-apply filter to refresh visual state of the list
-          applyItemsFilter(query);
-        });
-        resultsList.appendChild(a);
-      });
-
-      resultsList.style.display = '';
-    }
-  }
-
-  // ── 7.1 Static charts orchestration ────────────────────────────────────
-  var STATIC_CHART_IDS = [
-    'chartUsuariosPorClase',
-    'chartClasesPorRaza',
-    'chartUsuariosMatadosPorClase',
-    'chartUsuariosPorLevel',
-    'chartEloDistribution',
-    'chartTopGuilds',
-    'chartGoldByLevel',
-    'chartKdRatio',
-    'chartFactionSummary',
-    'chartFishingLeaderboard',
-    'chartGenderDistribution',
-    'chartTopNpcHunters'
-  ];
-
-  var CLASS_CATEGORIES = [
-    'Mago', 'Clérigo', 'Guerrero', 'Asesino', 'Bardo',
-    'Druida', 'Paladin', 'Cazador', 'Trabajador', 'Bandido'
-  ];
-
-  function initStaticCharts() {
     // Show loading on all static chart containers
-    STATIC_CHART_IDS.forEach(function (id) { showLoading(id); });
+    STATIC_CHART_IDS.forEach(function (id) { self.showLoading(id); });
 
     fetch('api_charts.php')
       .then(function (response) {
@@ -1052,12 +727,10 @@
         return response.json();
       })
       .then(function (data) {
-        renderPieChart('chartUsuariosPorClase', data.usuariosPorClase);
-        renderColumnChart('chartClasesPorRaza', data.clasesPorRaza, CLASS_CATEGORIES);
-        renderBarChart('chartUsuariosMatadosPorClase', data.killsPorClase);
-        renderLineChart('chartUsuariosPorLevel', data.usuariosPorLevel);
-
-        // ── New charts ──
+        self.renderPieChart('chartUsuariosPorClase', data.usuariosPorClase);
+        self.renderColumnChart('chartClasesPorRaza', data.clasesPorRaza, CLASS_CATEGORIES);
+        self.renderBarChart('chartUsuariosMatadosPorClase', data.killsPorClase);
+        self.renderLineChart('chartUsuariosPorLevel', data.usuariosPorLevel);
 
         // ELO Distribution — check if all counts are zero
         var eloData = data.eloDistribution;
@@ -1074,11 +747,11 @@
             eloContainer.appendChild(eloFallback);
           }
         } else {
-          renderColumnChart('chartEloDistribution', eloData.map(function (d) { return d.count; }), eloData.map(function (d) { return d.bucket; }));
+          self.renderColumnChart('chartEloDistribution', eloData.map(function (d) { return d.count; }), eloData.map(function (d) { return d.bucket; }));
         }
 
-        // Top Guilds — renderGuildChart handles its own fallback
-        renderGuildChart('chartTopGuilds', data.topGuilds);
+        // Top Guilds
+        self.renderGuildChart('chartTopGuilds', data.topGuilds);
 
         // Gold by Level Range — grouped column with 2 series
         var goldData = data.goldByLevelRange;
@@ -1086,16 +759,16 @@
           var averages = goldData.map(function (d) { return d.average; });
           var medians = goldData.map(function (d) { return d.median; });
           var rangeLabels = goldData.map(function (d) { return d.range; });
-          renderColumnChart('chartGoldByLevel', [{ name: 'Promedio', data: averages }, { name: 'Mediana', data: medians }], rangeLabels);
+          self.renderColumnChart('chartGoldByLevel', [{ name: 'Promedio', data: averages }, { name: 'Mediana', data: medians }], rangeLabels);
         } else {
-          renderColumnChart('chartGoldByLevel', [], []);
+          self.renderColumnChart('chartGoldByLevel', [], []);
         }
 
         // K/D Ratio by Class
-        renderBarChart('chartKdRatio', data.kdRatioByClass);
+        self.renderBarChart('chartKdRatio', data.kdRatioByClass);
 
-        // Faction Summary — renderFactionChart handles its own fallback
-        renderFactionChart('chartFactionSummary', data.factionSummary);
+        // Faction Summary
+        self.renderFactionChart('chartFactionSummary', data.factionSummary);
 
         // Fishing Leaderboard — check for empty/all-zero
         var fishData = data.fishingLeaderboard;
@@ -1112,11 +785,11 @@
             fishContainer.appendChild(fishFallback);
           }
         } else {
-          renderBarChart('chartFishingLeaderboard', fishData);
+          self.renderBarChart('chartFishingLeaderboard', fishData);
         }
 
         // Gender Distribution
-        renderPieChart('chartGenderDistribution', data.genderDistribution);
+        self.renderPieChart('chartGenderDistribution', data.genderDistribution);
 
         // Top NPC Hunters — check for empty/all-zero
         var npcData = data.topNpcHunters;
@@ -1133,60 +806,18 @@
             npcContainer.appendChild(npcFallback);
           }
         } else {
-          renderBarChart('chartTopNpcHunters', npcData);
+          self.renderBarChart('chartTopNpcHunters', npcData);
         }
       })
       .catch(function () {
         STATIC_CHART_IDS.forEach(function (id) {
-          showError(id, 'No se pudieron cargar las estadísticas.');
+          self.showError(id, 'No se pudieron cargar las estadísticas.');
         });
       });
   }
+};
 
-  // ── 7.2 DOMContentLoaded — kick off all data fetches in parallel ────────
-  document.addEventListener('DOMContentLoaded', function () {
-    initStaticCharts();
-    renderGoldInflationChart('goldInflation');
-    renderItemsChart('itemsQuantity');
-  });
-
-  // ── Export for testing ───────────────────────────────────────────────────
-  if (typeof module !== 'undefined' && module.exports) {
-    module.exports = {
-      normalizeStr: normalizeStr,
-      downsampleDaily: downsampleDaily,
-      bucketValues: bucketValues,
-      topN: topN,
-      guildAlignmentColor: guildAlignmentColor,
-      computeKdRatio: computeKdRatio,
-      computeProgressPercent: computeProgressPercent,
-      showLoading: showLoading,
-      showError: showError,
-      DARK_PALETTE: DARK_PALETTE,
-      renderPieChart: renderPieChart,
-      renderColumnChart: renderColumnChart,
-      renderBarChart: renderBarChart,
-      renderLineChart: renderLineChart,
-      renderGuildChart: renderGuildChart,
-      renderFactionChart: renderFactionChart,
-      renderGoldInflationChart: renderGoldInflationChart,
-      renderItemsChart: renderItemsChart,
-      applyItemsFilter: applyItemsFilter,
-      initStaticCharts: initStaticCharts,
-      toggleItemSelection: toggleItemSelection,
-      updateItemsChart: updateItemsChart,
-      updateSelectedTags: updateSelectedTags,
-      clearAllSelections: clearAllSelections,
-      selectRandomItems: selectRandomItems,
-      DEFAULT_RANDOM_COUNT: DEFAULT_RANDOM_COUNT,
-      get selectedItems() { return selectedItems; },
-      MAX_SELECTED: MAX_SELECTED,
-      get chartData() { return chartData; },
-      set chartData(v) { chartData = v; },
-      get allItemNames() { return allItemNames; },
-      set allItemNames(v) { allItemNames = v; },
-      get itemsChart() { return itemsChart; },
-      set itemsChart(v) { itemsChart = v; }
-    };
-  }
-})();
+// ── Export for testing ─────────────────────────────────────────────────────
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = AO20;
+}

@@ -12,15 +12,29 @@ MockChart.defaults = {
 };
 globalThis.Chart = MockChart;
 
-const chartsModule = require('../js/charts.js');
-const {
-  normalizeStr, downsampleDaily, showError,
-  renderPieChart, renderColumnChart, renderBarChart, renderLineChart,
-  toggleItemSelection, selectedItems, MAX_SELECTED,
-  updateItemsChart, DARK_PALETTE, chartData,
-  applyItemsFilter,
-  bucketValues, topN, guildAlignmentColor, computeKdRatio, computeProgressPercent
-} = chartsModule;
+// Load AO20 namespace modules in order: config → data-utils → renderers → items-filter
+const AO20 = require('../js/config.js');
+globalThis.AO20 = AO20;
+require('../js/data-utils.js');
+require('../js/renderers.js');
+require('../js/items-filter.js');
+
+// Map old flat exports to the new AO20 namespace structure
+const { normalizeStr, downsampleDaily, bucketValues, topN, guildAlignmentColor, computeKdRatio, computeProgressPercent } = AO20.utils;
+const showError = AO20.renderers.showError.bind(AO20.renderers);
+const renderPieChart = AO20.renderers.renderPieChart.bind(AO20.renderers);
+const renderColumnChart = AO20.renderers.renderColumnChart.bind(AO20.renderers);
+const renderBarChart = AO20.renderers.renderBarChart.bind(AO20.renderers);
+const renderLineChart = AO20.renderers.renderLineChart.bind(AO20.renderers);
+const initStaticCharts = AO20.renderers.initStaticCharts.bind(AO20.renderers);
+const renderGoldInflationChart = AO20.renderers.renderGoldInflationChart.bind(AO20.renderers);
+const renderItemsChart = AO20.renderers.renderItemsChart.bind(AO20.renderers);
+const { toggleItemSelection, selectedItems, updateItemsChart, updateSelectedTags, clearAllSelections, applyItemsFilter, selectRandomItems } = AO20.itemsFilter;
+const { DARK_PALETTE, MAX_SELECTED, DEFAULT_RANDOM_COUNT } = AO20.config;
+const chartData = AO20.itemsFilter.chartData;
+
+// Compatibility shim: chartsModule-like object for tests that access chartData/allItemNames/itemsChart
+const chartsModule = AO20.itemsFilter;
 
 // ── Arbitrary: alphanumeric container ID ───────────────────────────────────
 const arbContainerId = fc.string({
@@ -175,7 +189,6 @@ describe('Feature: chartjs-migration, Property 2: Fetch failure shows error mess
 
           globalThis.fetch = vi.fn().mockRejectedValue(new Error(msg));
 
-          const { initStaticCharts } = require('../js/charts.js');
           initStaticCharts();
 
           await flushPromises();
@@ -200,7 +213,6 @@ describe('Feature: chartjs-migration, Property 2: Fetch failure shows error mess
           setupContainer(id);
           globalThis.fetch = vi.fn().mockRejectedValue(new Error(msg));
 
-          const { renderGoldInflationChart } = require('../js/charts.js');
           renderGoldInflationChart(id);
 
           await flushPromises();
@@ -223,7 +235,6 @@ describe('Feature: chartjs-migration, Property 2: Fetch failure shows error mess
           setupContainer(id);
           globalThis.fetch = vi.fn().mockRejectedValue(new Error(msg));
 
-          const { renderItemsChart } = require('../js/charts.js');
           renderItemsChart(id);
 
           await flushPromises();
@@ -1802,7 +1813,6 @@ describe('Feature: items-chart-loading-fix, Property 1: Bug Condition', () => {
             json: () => Promise.resolve(apiData)
           });
 
-          const { renderItemsChart } = require('../js/charts.js');
           renderItemsChart(id);
 
           await flushPromises();
@@ -1883,7 +1893,6 @@ describe('Feature: items-chart-loading-fix, Property 2: Preservation', () => {
               json: () => Promise.resolve([])
             });
 
-            const { renderItemsChart } = require('../js/charts.js');
             renderItemsChart(id);
 
             await flushPromises();
@@ -1936,7 +1945,6 @@ describe('Feature: items-chart-loading-fix, Property 2: Preservation', () => {
             // Mock fetch to reject with network error
             globalThis.fetch = vi.fn().mockRejectedValue(new Error(msg));
 
-            const { renderItemsChart } = require('../js/charts.js');
             renderItemsChart(id);
 
             await flushPromises();
@@ -1985,7 +1993,6 @@ describe('Feature: items-chart-loading-fix, Property 2: Preservation', () => {
               status: statusCode
             });
 
-            const { renderItemsChart } = require('../js/charts.js');
             renderItemsChart(id);
 
             await flushPromises();
@@ -2213,7 +2220,7 @@ describe('Feature: random-default-items, Property 1: Invariante de cantidad de s
    * selectRandomItems, selectedItems.size must equal min(N, DEFAULT_RANDOM_COUNT).
    */
 
-  const { selectRandomItems, DEFAULT_RANDOM_COUNT } = chartsModule;
+  // selectRandomItems and DEFAULT_RANDOM_COUNT already imported at top level
 
   beforeEach(() => {
     selectedItems.clear();
@@ -2425,6 +2432,89 @@ describe('Feature: random-default-items, Property 3: Sincronización de chart y 
           expect(badges.length).toBe(selectedItems.size);
         }
       ),
+      { numRuns: 100 }
+    );
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Feature: ui-ux-improvements, Property 1: Date filter preserves all valid
+// points and excludes all invalid points
+// ═══════════════════════════════════════════════════════════════════════════
+describe('Feature: ui-ux-improvements, Property 1: Date filter preserves all valid points and excludes all invalid points', () => {
+  /**
+   * **Validates: Requirements 7.2, 7.3**
+   *
+   * For any random array of {x: timestamp, y: number} points with timestamps
+   * spanning 2024-01-01 to 2025-12-31 and a random minimum date,
+   * filterBeforeDate must:
+   * (a) every output point has x >= minDate.getTime()
+   * (b) every input point with x >= minDate.getTime() appears in the output
+   * (c) output length equals count of valid input points
+   */
+
+  // Load AO20 namespace: config first (sets global), then data-utils
+  const AO20ns = (() => {
+    const ns = require('../js/config.js');
+    globalThis.AO20 = ns;
+    require('../js/data-utils.js');
+    return ns;
+  })();
+
+  const filterBeforeDate = AO20ns.utils.filterBeforeDate;
+
+  // Timestamp range: 2024-01-01 to 2025-12-31
+  const MIN_TS = new Date('2024-01-01T00:00:00Z').getTime();
+  const MAX_TS = new Date('2025-12-31T23:59:59Z').getTime();
+
+  const arbTimestamp = fc.integer({ min: MIN_TS, max: MAX_TS });
+
+  const arbPoint = fc.record({
+    x: arbTimestamp,
+    y: fc.double({ min: -1e6, max: 1e6, noNaN: true, noDefaultInfinity: true })
+  });
+
+  const arbPoints = fc.array(arbPoint, { minLength: 0, maxLength: 50 });
+
+  // Random minimum date within the same range
+  const arbMinDate = arbTimestamp.map(ts => new Date(ts));
+
+  it('every output point has x >= minDate.getTime()', () => {
+    fc.assert(
+      fc.property(arbPoints, arbMinDate, (points, minDate) => {
+        const result = filterBeforeDate(points, minDate);
+        const threshold = minDate.getTime();
+        for (const p of result) {
+          expect(p.x).toBeGreaterThanOrEqual(threshold);
+        }
+      }),
+      { numRuns: 100 }
+    );
+  });
+
+  it('every input point with x >= minDate.getTime() appears in the output', () => {
+    fc.assert(
+      fc.property(arbPoints, arbMinDate, (points, minDate) => {
+        const result = filterBeforeDate(points, minDate);
+        const threshold = minDate.getTime();
+        const validInputPoints = points.filter(p => p.x >= threshold);
+        for (const vp of validInputPoints) {
+          const found = result.some(rp => rp.x === vp.x && rp.y === vp.y);
+          expect(found).toBe(true);
+        }
+      }),
+      { numRuns: 100 }
+    );
+  });
+
+  it('output length equals count of valid input points', () => {
+    fc.assert(
+      fc.property(arbPoints, arbMinDate, (points, minDate) => {
+        const result = filterBeforeDate(points, minDate);
+        const threshold = minDate.getTime();
+        const expectedCount = points.filter(p => p.x >= threshold).length;
+        expect(result.length).toBe(expectedCount);
+      }),
       { numRuns: 100 }
     );
   });

@@ -1,125 +1,168 @@
-/*!
- * Start Bootstrap - Blog Home (http://startbootstrap.com/template-overviews/blog-home)
- * Copyright 2013-2017 Start Bootstrap
- * Licensed under MIT (https://github.com/BlackrockDigital/startbootstrap-blog-home/blob/master/LICENSE)
- */
+/* ==========================================================================
+   AO20 Statistics Dashboard — Custom Styles
+   Organized into logical groups for maintainability.
+   DaisyUI 5 + Tailwind CSS 4 provide the base component system.
+   ========================================================================== */
+
+/* ==========================================================================
+   1. Layout
+   ========================================================================== */
 
 body {
-    padding-top: 100px;
+  padding-top: 64px; /* offset for fixed navbar height */
 }
 
+/* ==========================================================================
+   2. Navigation
+   ========================================================================== */
+
+.section-nav {
+  scrollbar-width: thin;
+}
+
+.section-nav a.active {
+  font-weight: 600;
+  opacity: 1;
+}
+
+/* ==========================================================================
+   3. Cards
+   ========================================================================== */
+
+/* Card styles are handled entirely by DaisyUI card classes.
+   No custom overrides needed. */
+
+/* ==========================================================================
+   4. Charts — Base Container
+   ========================================================================== */
+
 .chart-container {
-	position: relative;
-	height: 500px;
-	width: 100%;
+  position: relative;
+  width: 100%;
+  height: 400px; /* default fallback */
 }
 
 .chart-container canvas {
-	width: 100% !important;
-	height: 100% !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 
-.chart-loading, .chart-error {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	height: 100%;
-	color: #aaa;
-	font-size: 0.95em;
+/* ==========================================================================
+   5. Charts — Type-Specific Heights
+   ========================================================================== */
+
+.chart-h-pie {
+  max-height: 350px;
+}
+
+.chart-h-bar {
+  min-height: 300px;
+}
+
+.chart-h-bar-tall {
+  min-height: 400px;
+}
+
+.chart-h-timeseries {
+  height: clamp(350px, 50vh, 500px);
+}
+
+.chart-h-column {
+  height: 400px;
+}
+
+/* ==========================================================================
+   6. Charts — Loading & Error States
+   ========================================================================== */
+
+.chart-loading,
+.chart-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 0.95em;
+}
+
+.chart-loading {
+  color: oklch(var(--bc) / 0.5);
 }
 
 .chart-error {
-	color: #e74c3c;
+  color: oklch(var(--er));
 }
 
-.mb10 {
-	margin-bottom: 10px !important;
-}
+/* ==========================================================================
+   7. Stat Cards
+   ========================================================================== */
 
-#promedioVidaContainer {
-	margin-top: 20px;
-	display: none;
-}
+/* Stat cards use DaisyUI stat component classes directly.
+   No custom overrides needed. */
 
-.nav-item.warning {
-	background-color: #F39C12;
-	border-color: #e08e0b;
-	border-radius: 0.25rem;
-}
-
-.table-personaje {
-	margin-bottom : 0;
-}
-
-.list-personaje {
-	margin-bottom: 20px;
-}
-
-.form-personaje {
-	margin-bottom: 30px;
-}
-
-.card-body-castles a {
-	color: inherit;
-}
-
-.card-body .img {
-	width: 100%;
-}
-
-.navbar-nav .nav-item+.nav-item {
-    margin-left: 1rem;
-}
-
-.badge-status {
-	margin-left: 10px;
-	height: 10px;
-	border-radius: 100%;
-}
-
-/* Items Statistics Filter */
+/* ==========================================================================
+   8. Items Filter
+   ========================================================================== */
 
 #itemsResultsList {
-	background-color: #303030;
-	border: 1px solid #444;
-	border-radius: 0.25rem;
-	z-index: 10;
+  background-color: oklch(var(--b2));
+  border: 1px solid oklch(var(--b3));
+  border-radius: 0.375rem;
+  z-index: 10;
 }
 
 #itemsResultsList .list-group-item {
-	background-color: #303030;
-	color: #e0e0e0;
-	border-color: #444;
-	cursor: pointer;
-	padding: 0.4rem 0.75rem;
-	font-size: 0.9em;
-	transition: background-color 0.15s ease;
+  display: block;
+  background-color: oklch(var(--b2));
+  color: oklch(var(--bc));
+  border-bottom: 1px solid oklch(var(--b3));
+  cursor: pointer;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.9em;
+  transition: background-color 0.15s ease;
+}
+
+#itemsResultsList .list-group-item:last-child {
+  border-bottom: none;
 }
 
 #itemsResultsList .list-group-item:hover {
-	background-color: #3a3a3a;
+  background-color: oklch(var(--b3));
 }
 
 #itemsResultsList .list-group-item.active {
-	background-color: #375a7f;
-	border-color: #375a7f;
-	color: #fff;
+  background-color: oklch(var(--p));
+  color: oklch(var(--pc));
 }
 
 #itemsSelectedTags .badge {
-	font-size: 0.85em;
-	font-weight: 500;
-	display: inline-flex;
-	align-items: center;
-	gap: 4px;
+  font-size: 0.85em;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 #itemsSelectedTags .badge .btn-close {
-	font-size: 0.55em;
-	padding: 0;
-	filter: brightness(0) invert(1);
+  font-size: 0.55em;
+  padding: 0;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: inherit;
+  opacity: 0.7;
+}
+
+#itemsSelectedTags .badge .btn-close:hover {
+  opacity: 1;
 }
 
 #itemsLimitMsg {
-	font-weight: 500;
+  font-weight: 500;
 }
+
+/* ==========================================================================
+   9. Utilities
+   ========================================================================== */
+
+/* Utility classes are handled by Tailwind CSS.
+   No custom utilities needed. */
