@@ -529,9 +529,30 @@
             backgroundColor: 'transparent',
             fill: false,
             tension: 0.1,
-            pointRadius: 0
+            pointRadius: 0,
+            borderWidth: 2.5
           };
         });
+
+        // Crosshair plugin for gold chart
+        var goldCrosshairPlugin = {
+          id: 'goldCrosshair',
+          afterDraw: function (chart) {
+            if (chart.tooltip && chart.tooltip._active && chart.tooltip._active.length) {
+              var x = chart.tooltip._active[0].element.x;
+              var yAxis = chart.scales.y;
+              var ctx = chart.ctx;
+              ctx.save();
+              ctx.beginPath();
+              ctx.moveTo(x, yAxis.top);
+              ctx.lineTo(x, yAxis.bottom);
+              ctx.lineWidth = 1;
+              ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+              ctx.stroke();
+              ctx.restore();
+            }
+          }
+        };
 
         new Chart(canvas, {
           type: 'line',
@@ -539,6 +560,7 @@
             labels: labels,
             datasets: datasets
           },
+          plugins: [goldCrosshairPlugin],
           options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -560,12 +582,36 @@
             plugins: {
               legend: {
                 display: true,
-                labels: { color: '#e0e0e0' }
+                position: 'bottom',
+                labels: {
+                  color: '#e0e0e0',
+                  boxWidth: 12,
+                  padding: 8,
+                  font: { size: 11 }
+                }
               },
               tooltip: {
                 mode: 'index',
-                intersect: false
+                intersect: false,
+                backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                titleColor: '#fff',
+                bodyColor: '#e0e0e0',
+                borderColor: 'rgba(255, 255, 255, 0.2)',
+                borderWidth: 1,
+                padding: 10,
+                callbacks: {
+                  label: function (ctx) {
+                    return ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString();
+                  }
+                }
               }
+            },
+            interaction: {
+              mode: 'index',
+              intersect: false
+            },
+            elements: {
+              point: { radius: 0, hoverRadius: 5, hitRadius: 10 }
             }
           }
         });
