@@ -1137,7 +1137,7 @@ AO20.renderers = {
 
         // PvP & Combat
         var cvsc = data.ciudadanosVsCriminales;
-        if (cvsc) {
+        if (cvsc && !Array.isArray(cvsc)) {
           self.renderPieChart('chartCiudadanosVsCriminales', [
             { name: 'Ciudadanos Matados', y: cvsc.totalCiudadanosMatados },
             { name: 'Criminales Matados', y: cvsc.totalCriminalesMatados }
@@ -1160,7 +1160,7 @@ AO20.renderers = {
         // Economy & Items
         self.renderLorenzChart('chartLorenzCurve', data.giniLorenz);
         var bankRate = data.bankUsageRate;
-        if (bankRate) {
+        if (bankRate && !Array.isArray(bankRate)) {
           self.renderStatCard('statBankUsage', bankRate.bankUsagePercent.toFixed(1) + '%', bankRate.bankUsersCount + ' / ' + bankRate.totalActiveCharacters + ' personajes');
         }
         self.renderBarChart('chartMostHoardedItems',
@@ -1168,14 +1168,14 @@ AO20.renderers = {
           'Cantidad Total'
         );
         var evu = data.equippedVsUnequipped;
-        if (evu) {
+        if (evu && !Array.isArray(evu)) {
           self.renderPieChart('chartEquippedVsUnequipped', [
             { name: 'Equipado', y: evu.equippedCount },
             { name: 'No Equipado', y: evu.unequippedCount }
           ]);
         }
         var etd = data.elementalTagsDistribution;
-        if (etd) {
+        if (etd && !Array.isArray(etd)) {
           self.renderPieChart('chartElementalTags', [
             { name: 'Con Tags Elementales', y: etd.withElementalTags },
             { name: 'Sin Tags Elementales', y: etd.withoutElementalTags }
@@ -1188,19 +1188,19 @@ AO20.renderers = {
           (data.guildSizeDistribution || []).map(function(d) { return d.bucket; })
         );
         var grr = data.guildRejectionRate;
-        if (grr) {
+        if (grr && !Array.isArray(grr)) {
           self.renderStatCard('statGuildRejection', (grr.rejectionRate * 100).toFixed(1) + '%', grr.totalAcceptances + ' aceptados / ' + grr.totalRequests + ' solicitudes');
         }
         var mr = data.marriageRate;
-        if (mr) {
+        if (mr && !Array.isArray(mr)) {
           self.renderStatCard('statMarriage', mr.marriagePercent.toFixed(1) + '%', mr.marriedCount + ' / ' + mr.totalActiveCharacters + ' personajes');
         }
         var gab = data.guildAlignmentBalance;
-        if (gab) {
+        if (gab && Array.isArray(gab) && gab.length > 0) {
           self.renderPieChart('chartGuildAlignmentBalance', gab.map(function(d) { return { name: d.alignmentName, y: d.count }; }));
         }
         var gc = data.guildConcentration;
-        if (gc) {
+        if (gc && !Array.isArray(gc)) {
           self.renderPieChart('chartGuildConcentration', [
             { name: 'Top 10 Guilds', y: gc.topGuildMembers },
             { name: 'Otros Guilds', y: gc.otherGuildMembers },
@@ -1218,25 +1218,29 @@ AO20.renderers = {
           'Personajes'
         );
         var sa = data.skinAdoption;
-        if (sa) {
+        if (sa && !Array.isArray(sa)) {
           self.renderStatCard('statSkinAdoption', sa.skinAdoptionPercent.toFixed(1) + '%', sa.skinUsersCount + ' / ' + sa.totalActiveCharacters + ' personajes');
-          self.renderBarChart('chartTopSkins',
-            sa.topSkins.map(function(d) { return { name: 'Skin #' + d.skinId, y: d.count }; }),
-            'Cantidad'
-          );
+          if (sa.topSkins && sa.topSkins.length > 0) {
+            self.renderBarChart('chartTopSkins',
+              sa.topSkins.map(function(d) { return { name: 'Skin #' + d.skinId, y: d.count }; }),
+              'Cantidad'
+            );
+          }
         }
         var po = data.petOwnership;
-        if (po) {
+        if (po && !Array.isArray(po)) {
           self.renderStatCard('statPetOwnership', po.petOwnershipPercent.toFixed(1) + '%', po.petOwnersCount + ' / ' + po.totalActiveCharacters + ' personajes');
-          self.renderBarChart('chartTopPets',
-            po.topPets.map(function(d) { return { name: 'Pet #' + d.petId, y: d.count }; }),
-            'Cantidad'
-          );
+          if (po.topPets && po.topPets.length > 0) {
+            self.renderBarChart('chartTopPets',
+              po.topPets.map(function(d) { return { name: 'Pet #' + d.petId, y: d.count }; }),
+              'Cantidad'
+            );
+          }
         }
 
         // Activity & Misc
         var mca = data.multiCharacterAccounts;
-        if (mca) {
+        if (mca && Array.isArray(mca) && mca.length > 0) {
           self.renderPieChart('chartMultiCharacterAccounts', mca.map(function(d) { return { name: d.bucket, y: d.accountCount }; }));
         }
         self.renderBarChart('chartCharactersPerMap',
@@ -1244,11 +1248,11 @@ AO20.renderers = {
           'Personajes'
         );
         var dcr = data.deadCharacterRate;
-        if (dcr) {
+        if (dcr && !Array.isArray(dcr)) {
           self.renderStatCard('statDeadCharacter', dcr.deadPercent.toFixed(1) + '%', dcr.deadCount + ' / ' + dcr.totalActiveCharacters + ' personajes');
         }
         var sr = data.sailingRate;
-        if (sr) {
+        if (sr && !Array.isArray(sr)) {
           self.renderStatCard('statSailing', sr.sailingPercent.toFixed(1) + '%', sr.sailingCount + ' / ' + sr.totalActiveCharacters + ' personajes');
         }
         self.renderColumnChart('chartFishingCombatCorrelation',
@@ -1258,13 +1262,13 @@ AO20.renderers = {
 
         // Events & Server Health
         var gqp = data.globalQuestParticipation;
-        if (gqp) {
+        if (gqp && !Array.isArray(gqp)) {
           self.renderStatCard('statQuestParticipation', gqp.participationPercent.toFixed(1) + '%', gqp.participantCount + ' / ' + gqp.totalActiveCharacters + ' personajes');
         }
         self.renderPercentBarChart('chartGlobalQuestCompletion', data.globalQuestCompletion);
         self.renderRetentionChart('chartAccountRetention', data.accountRetention);
         var pdr = data.patronDonorRate;
-        if (pdr) {
+        if (pdr && !Array.isArray(pdr)) {
           self.renderStatCard('statPatronDonor', pdr.patronPercent.toFixed(1) + '%', pdr.patronCount + ' patrones / ' + pdr.totalAccounts + ' cuentas');
         }
         self.renderBarChart('chartQuestCompletionByClass',
@@ -1273,7 +1277,7 @@ AO20.renderers = {
         );
         // Deaths vs Level Curve — line chart
         var dvl = data.deathsVsLevelCurve;
-        if (dvl && dvl.length > 0) {
+        if (dvl && Array.isArray(dvl) && dvl.length > 0) {
           self.renderLineChart('chartDeathsVsLevel', dvl.map(function(d) { return d.avgDeaths; }));
         }
       })

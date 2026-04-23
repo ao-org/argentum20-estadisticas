@@ -5,8 +5,8 @@ include('_statistics.php');
 function safeCall($fn) {
     try { return $fn(); }
     catch (Throwable $e) {
-        error_log('[AO20 Stats] ' . $e->getMessage());
-        return [];
+        error_log('[Argentum Online Stats] ' . $e->getMessage());
+        return null;
     }
 }
 
