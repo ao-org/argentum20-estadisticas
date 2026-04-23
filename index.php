@@ -9,10 +9,15 @@ $stats = getGeneralStats();
 <head>
   <meta charset="utf-8">
   <title>AO20 - Estadisticas</title>
+  <!-- Prevent flash of wrong theme -->
+  <script>
+    (function(){var t=localStorage.getItem('ao20-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');else document.documentElement.setAttribute('data-theme','night');})();
+  </script>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="shortcut icon" href="/favicon.ico">
   <!-- DaisyUI 5 + Tailwind CSS 4 via CDN -->
   <link href="https://cdn.jsdelivr.net/npm/daisyui@5/daisyui.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@5/themes.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
   <link href="./css/cucsi.css" rel="stylesheet">
