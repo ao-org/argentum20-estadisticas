@@ -30,6 +30,7 @@ AO20.renderers = {
 
   // ── Pie chart ──────────────────────────────────────────────────────────
   renderPieChart: function (id, data) {
+    console.log('[AO20 Debug] renderPieChart called:', id, 'data:', data);
     var canvas = document.getElementById(id);
     if (!canvas) return null;
     var container = canvas.parentNode;
@@ -77,6 +78,7 @@ AO20.renderers = {
 
   // ── Column (vertical bar) chart ────────────────────────────────────────
   renderColumnChart: function (id, seriesData, categories) {
+    console.log('[AO20 Debug] renderColumnChart called:', id, 'data length:', seriesData && seriesData.length);
     var canvas = document.getElementById(id);
     if (!canvas) return null;
     var container = canvas.parentNode;
@@ -145,6 +147,7 @@ AO20.renderers = {
 
   // ── Horizontal bar chart ───────────────────────────────────────────────
   renderBarChart: function (id, data, label) {
+    console.log('[AO20 Debug] renderBarChart called:', id, 'data:', data);
     var canvas = document.getElementById(id);
     if (!canvas) return null;
     var container = canvas.parentNode;
@@ -736,6 +739,7 @@ AO20.renderers = {
 
   // ── Heatmap table renderer ─────────────────────────────────────────────
   renderHeatmapTable: function (containerId, data) {
+    console.log('[AO20 Debug] renderHeatmapTable called:', containerId, 'data:', data);
     var container = document.getElementById(containerId);
     if (!container) return;
 
@@ -817,6 +821,7 @@ AO20.renderers = {
 
   // ── Lorenz curve chart ─────────────────────────────────────────────────
   renderLorenzChart: function (id, data) {
+    console.log('[AO20 Debug] renderLorenzChart called:', id, 'data:', data);
     var canvas = document.getElementById(id);
     if (!canvas) return null;
     var container = canvas.parentNode;
@@ -903,6 +908,7 @@ AO20.renderers = {
 
   // ── Retention chart (line with YYYY-MM labels) ─────────────────────────
   renderRetentionChart: function (id, data) {
+    console.log('[AO20 Debug] renderRetentionChart called:', id, 'data:', data);
     var canvas = document.getElementById(id);
     if (!canvas) return null;
     var container = canvas.parentNode;
@@ -971,6 +977,7 @@ AO20.renderers = {
 
   // ── Percent bar chart (horizontal, 0–100% X-axis) ─────────────────────
   renderPercentBarChart: function (id, data) {
+    console.log('[AO20 Debug] renderPercentBarChart called:', id, 'data:', data);
     var canvas = document.getElementById(id);
     if (!canvas) return null;
     var container = canvas.parentNode;
@@ -1030,6 +1037,7 @@ AO20.renderers = {
 
   // ── Stat card helper ───────────────────────────────────────────────────
   renderStatCard: function (containerId, value, subtitle) {
+    console.log('[AO20 Debug] renderStatCard called:', containerId, 'value:', value);
     var container = document.getElementById(containerId);
     if (!container) return;
     var valEl = container.querySelector('.stat-value');
@@ -1049,10 +1057,24 @@ AO20.renderers = {
 
     fetch('api_charts.php')
       .then(function (response) {
+        console.log('[AO20 Debug] api_charts.php response status:', response.status);
         if (!response.ok) throw new Error('HTTP ' + response.status);
         return response.json();
       })
       .then(function (data) {
+        console.log('[AO20 Debug] API data keys:', Object.keys(data));
+        console.log('[AO20 Debug] Extended data sample:', {
+          ciudadanosVsCriminales: data.ciudadanosVsCriminales,
+          mostDangerousClasses: data.mostDangerousClasses,
+          giniLorenz: data.giniLorenz,
+          bankUsageRate: data.bankUsageRate,
+          guildSizeDistribution: data.guildSizeDistribution,
+          skinAdoption: data.skinAdoption,
+          skillPointPatterns: data.skillPointPatterns,
+          multiCharacterAccounts: data.multiCharacterAccounts,
+          globalQuestParticipation: data.globalQuestParticipation,
+          deathsVsLevelCurve: data.deathsVsLevelCurve
+        });
         self.renderPieChart('chartUsuariosPorClase', data.usuariosPorClase);
         self.renderColumnChart('chartClasesPorRaza', data.clasesPorRaza, CLASS_CATEGORIES);
         self.renderBarChart('chartUsuariosMatadosPorClase', data.killsPorClase);
@@ -1136,7 +1158,10 @@ AO20.renderers = {
         }
 
         // PvP & Combat
+        console.log('[AO20 Debug] === Rendering PvP & Combat ===');
+        try {
         var cvsc = data.ciudadanosVsCriminales;
+        console.log('[AO20 Debug] ciudadanosVsCriminales:', typeof cvsc, Array.isArray(cvsc), cvsc);
         if (cvsc && !Array.isArray(cvsc)) {
           self.renderPieChart('chartCiudadanosVsCriminales', [
             { name: 'Ciudadanos Matados', y: cvsc.totalCiudadanosMatados },
@@ -1156,8 +1181,12 @@ AO20.renderers = {
           (data.reenlistadasDistribution || []).map(function(d) { return String(d.reenlistadas); })
         );
         self.renderHeatmapTable('chartDeathKillHeatmap', data.deathKillHeatmap);
+        console.log('[AO20 Debug] PvP & Combat done');
+        } catch(e) { console.error('[AO20 Debug] PvP & Combat CRASHED:', e); }
 
         // Economy & Items
+        console.log('[AO20 Debug] === Rendering Economy & Items ===');
+        try {
         self.renderLorenzChart('chartLorenzCurve', data.giniLorenz);
         var bankRate = data.bankUsageRate;
         if (bankRate && !Array.isArray(bankRate)) {
@@ -1181,8 +1210,12 @@ AO20.renderers = {
             { name: 'Sin Tags Elementales', y: etd.withoutElementalTags }
           ]);
         }
+        console.log('[AO20 Debug] Economy & Items done');
+        } catch(e) { console.error('[AO20 Debug] Economy & Items CRASHED:', e); }
 
         // Social & Guilds
+        console.log('[AO20 Debug] === Rendering Social & Guilds ===');
+        try {
         self.renderColumnChart('chartGuildSizeDistribution',
           (data.guildSizeDistribution || []).map(function(d) { return d.guildCount; }),
           (data.guildSizeDistribution || []).map(function(d) { return d.bucket; })
@@ -1207,8 +1240,12 @@ AO20.renderers = {
             { name: 'Independientes', y: gc.independents }
           ]);
         }
+        console.log('[AO20 Debug] Social & Guilds done');
+        } catch(e) { console.error('[AO20 Debug] Social & Guilds CRASHED:', e); }
 
         // Character Building
+        console.log('[AO20 Debug] === Rendering Character Building ===');
+        try {
         self.renderColumnChart('chartSkillPointPatterns',
           (data.skillPointPatterns || []).map(function(d) { return d.avgValue; }),
           (data.skillPointPatterns || []).map(function(d) { return 'Skill #' + d.skillNumber; })
@@ -1237,8 +1274,12 @@ AO20.renderers = {
             );
           }
         }
+        console.log('[AO20 Debug] Character Building done');
+        } catch(e) { console.error('[AO20 Debug] Character Building CRASHED:', e); }
 
         // Activity & Misc
+        console.log('[AO20 Debug] === Rendering Activity & Misc ===');
+        try {
         var mca = data.multiCharacterAccounts;
         if (mca && Array.isArray(mca) && mca.length > 0) {
           self.renderPieChart('chartMultiCharacterAccounts', mca.map(function(d) { return { name: d.bucket, y: d.accountCount }; }));
@@ -1259,8 +1300,12 @@ AO20.renderers = {
           (data.fishingCombatCorrelation || []).map(function(d) { return d.avgKills; }),
           (data.fishingCombatCorrelation || []).map(function(d) { return d.fishingBracket; })
         );
+        console.log('[AO20 Debug] Activity & Misc done');
+        } catch(e) { console.error('[AO20 Debug] Activity & Misc CRASHED:', e); }
 
         // Events & Server Health
+        console.log('[AO20 Debug] === Rendering Events & Server Health ===');
+        try {
         var gqp = data.globalQuestParticipation;
         if (gqp && !Array.isArray(gqp)) {
           self.renderStatCard('statQuestParticipation', gqp.participationPercent.toFixed(1) + '%', gqp.participantCount + ' / ' + gqp.totalActiveCharacters + ' personajes');
@@ -1280,8 +1325,12 @@ AO20.renderers = {
         if (dvl && Array.isArray(dvl) && dvl.length > 0) {
           self.renderLineChart('chartDeathsVsLevel', dvl.map(function(d) { return d.avgDeaths; }));
         }
+        console.log('[AO20 Debug] Events & Server Health done');
+        } catch(e) { console.error('[AO20 Debug] Events & Server Health CRASHED:', e); }
+        console.log('[AO20 Debug] === All extended charts rendering complete ===');
       })
-      .catch(function () {
+      .catch(function (err) {
+        console.error('[AO20 Debug] FETCH OR RENDER FAILED:', err);
         STATIC_CHART_IDS.forEach(function (id) {
           self.showError(id, 'No se pudieron cargar las estadísticas.');
         });
