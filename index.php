@@ -1,6 +1,10 @@
 <?php
 include('_statistics.php');
 $stats = getGeneralStats();
+
+// Generate a CSP nonce for inline scripts
+$cspNonce = base64_encode(random_bytes(18));
+header("Content-Security-Policy: script-src 'self' https://cdn.jsdelivr.net 'nonce-$cspNonce'; style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; img-src 'self' data:; frame-src https://steamdb.info;");
 ?>
 
 <!DOCTYPE html>
@@ -10,7 +14,7 @@ $stats = getGeneralStats();
   <meta charset="utf-8">
   <title>Argentum Online - Estadisticas</title>
   <!-- Prevent flash of wrong theme -->
-  <script>
+  <script nonce="<?php echo $cspNonce; ?>">
     (function(){var t=localStorage.getItem('ao20-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');else document.documentElement.setAttribute('data-theme','night');})();
   </script>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
