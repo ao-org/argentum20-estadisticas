@@ -71,6 +71,10 @@ body {
   height: 400px;
 }
 
+.chart-h-300 {
+  height: 300px;
+}
+
 .chart-h-heatmap {
   min-height: 300px;
   overflow: auto;

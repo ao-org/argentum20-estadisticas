@@ -8,7 +8,7 @@ $stats = getGeneralStats();
 
 <head>
   <meta charset="utf-8">
-  <title>AO20 - Estadisticas</title>
+  <title>Argentum Online - Estadisticas</title>
   <!-- Prevent flash of wrong theme -->
   <script>
     (function(){var t=localStorage.getItem('ao20-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');else document.documentElement.setAttribute('data-theme','night');})();
@@ -225,7 +225,7 @@ $stats = getGeneralStats();
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-sm">Ciudadanos vs Criminales</h2>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartCiudadanosVsCriminales"></canvas>
             </div>
           </div>
@@ -233,7 +233,7 @@ $stats = getGeneralStats();
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-sm">Clases Más Peligrosas</h2>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartMostDangerousClasses"></canvas>
             </div>
           </div>
@@ -241,7 +241,7 @@ $stats = getGeneralStats();
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-sm">PvP por Rango de Nivel</h2>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartPvpByLevelBracket"></canvas>
             </div>
           </div>
@@ -249,7 +249,7 @@ $stats = getGeneralStats();
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-sm">Distribución de Reenlistadas</h2>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartReenlistadas"></canvas>
             </div>
           </div>
@@ -274,7 +274,7 @@ $stats = getGeneralStats();
               <div class="stat-value text-2xl">—</div>
               <div class="stat-desc">Coeficiente de Gini</div>
             </div>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartLorenzCurve"></canvas>
             </div>
           </div>
@@ -291,7 +291,7 @@ $stats = getGeneralStats();
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-sm">Items Más Acumulados</h2>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartMostHoardedItems"></canvas>
             </div>
           </div>
@@ -299,7 +299,7 @@ $stats = getGeneralStats();
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-sm">Equipado vs No Equipado</h2>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartEquippedVsUnequipped"></canvas>
             </div>
           </div>
@@ -307,7 +307,7 @@ $stats = getGeneralStats();
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-sm">Tags Elementales</h2>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartElementalTags"></canvas>
             </div>
           </div>
@@ -322,7 +322,7 @@ $stats = getGeneralStats();
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-sm">Distribución de Tamaño de Guilds</h2>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartGuildSizeDistribution"></canvas>
             </div>
           </div>
@@ -348,7 +348,7 @@ $stats = getGeneralStats();
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-sm">Balance de Alineación de Guilds</h2>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartGuildAlignmentBalance"></canvas>
             </div>
           </div>
@@ -356,7 +356,7 @@ $stats = getGeneralStats();
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-sm">Concentración de Guilds</h2>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartGuildConcentration"></canvas>
             </div>
           </div>
@@ -371,7 +371,7 @@ $stats = getGeneralStats();
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-sm">Patrones de Skill Points</h2>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartSkillPointPatterns"></canvas>
             </div>
           </div>
@@ -379,7 +379,7 @@ $stats = getGeneralStats();
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-sm">Popularidad de Hechizos</h2>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartSpellPopularity"></canvas>
             </div>
           </div>
@@ -396,7 +396,7 @@ $stats = getGeneralStats();
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-sm">Top 15 Skins</h2>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartTopSkins"></canvas>
             </div>
           </div>
@@ -413,7 +413,7 @@ $stats = getGeneralStats();
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-sm">Top 15 Mascotas</h2>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartTopPets"></canvas>
             </div>
           </div>
@@ -428,7 +428,7 @@ $stats = getGeneralStats();
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-sm">Cuentas Multi-Personaje</h2>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartMultiCharacterAccounts"></canvas>
             </div>
           </div>
@@ -436,7 +436,7 @@ $stats = getGeneralStats();
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-sm">Personajes por Mapa</h2>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartCharactersPerMap"></canvas>
             </div>
           </div>
@@ -462,7 +462,7 @@ $stats = getGeneralStats();
         <div class="card bg-base-200 shadow-xl md:col-span-2">
           <div class="card-body">
             <h2 class="card-title text-sm">Correlación Pesca vs Combate</h2>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartFishingCombatCorrelation"></canvas>
             </div>
           </div>
@@ -486,7 +486,7 @@ $stats = getGeneralStats();
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-sm">Completado de Quests Globales</h2>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartGlobalQuestCompletion"></canvas>
             </div>
           </div>
@@ -494,7 +494,7 @@ $stats = getGeneralStats();
         <div class="card bg-base-200 shadow-xl md:col-span-2">
           <div class="card-body">
             <h2 class="card-title text-sm">Retención de Cuentas</h2>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartAccountRetention"></canvas>
             </div>
           </div>
@@ -518,7 +518,7 @@ $stats = getGeneralStats();
         <div class="card bg-base-200 shadow-xl">
           <div class="card-body">
             <h2 class="card-title text-sm">Quests Completadas por Clase</h2>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartQuestCompletionByClass"></canvas>
             </div>
           </div>
@@ -526,7 +526,7 @@ $stats = getGeneralStats();
         <div class="card bg-base-200 shadow-xl md:col-span-2">
           <div class="card-body">
             <h2 class="card-title text-sm">Muertes vs Nivel</h2>
-            <div class="chart-h-300">
+            <div class="chart-container chart-h-300">
               <canvas id="chartDeathsVsLevel"></canvas>
             </div>
           </div>

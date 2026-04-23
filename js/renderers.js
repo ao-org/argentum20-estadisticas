@@ -835,7 +835,10 @@ AO20.renderers = {
     // Update Gini stat badge if present
     var giniEl = document.getElementById('giniValue');
     if (giniEl) {
-      giniEl.textContent = data.giniCoefficient != null ? data.giniCoefficient.toFixed(4) : '—';
+      var giniValEl = giniEl.querySelector('.stat-value');
+      if (giniValEl) {
+        giniValEl.textContent = data.giniCoefficient != null ? data.giniCoefficient.toFixed(4) : '—';
+      }
     }
 
     var labels = data.lorenzCurve.map(function (p) { return p.populationPercent + '%'; });
