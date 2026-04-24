@@ -625,6 +625,7 @@ AO20.renderers = {
                 x: {
                   type: 'time',
                   min: minDate.getTime(),
+                  max: Date.now(),
                   time: {
                     tooltipFormat: 'dd/MM/yyyy',
                     displayFormats: {
@@ -674,8 +675,8 @@ AO20.renderers = {
                 zoom: {
                   limits: {
                     x: {
-                      min: minDate.getTime(),
-                      max: Date.now(),
+                      min: 'original',
+                      max: 'original',
                       minRange: 7 * 24 * 60 * 60 * 1000 // 7 days minimum
                     }
                   },
