@@ -1,0 +1,16 @@
+.git
+.github
+.vscode
+.kiro
+dev_database
+tests
+node_modules
+vendor
+*.md
+package.json
+package-lock.json
+vitest.config.js
+.env*
+environment.php
+Dockerfile
+.dockerignore
